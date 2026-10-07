@@ -1,5 +1,6 @@
 package com.example.panalsuite.ui
 
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,15 +22,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.panalsuite.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
-    onLoginClick: (String, String) -> Unit
+    viewModel: LoginViewModel = viewModel(),
+    onLoginSuccess: () -> Unit = {}
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    val loggedUser by viewModel.loggedUser.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
+    if (loggedUser != null) {
+        onLoginSuccess()
+    }
 
     Column(
         modifier = Modifier
@@ -72,23 +83,31 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = errorMessage ?: "",
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
-                onLoginClick(email, password)
+                viewModel.login(email, password)
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Ingresar")
         }
     }
+
 }
 
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
-    LoginScreen(
-        onLoginClick = { _, _ -> }
-    )
+    LoginScreen()
 }
