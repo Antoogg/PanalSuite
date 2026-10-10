@@ -13,6 +13,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import android.content.Context
+import com.example.panalsuite.viewmodel.TicketViewModel
 
 @RunWith(AndroidJUnit4::class)
 class TicketDatabaseTest {
@@ -111,6 +112,18 @@ class TicketDatabaseTest {
         } finally {
             context.deleteDatabase(databaseName)
         }
+    }
+
+    @Test
+    fun updateTicketStatusChangesState(){
+        val viewModel = TicketViewModel()
+        val ticket = viewModel.tickets.value.first()
+
+        viewModel.updateTicketStatus(ticket.id, "Resuelto")
+
+        val updateTicket = viewModel.getTicketById(ticket.id)
+
+        assertEquals("Resuelto", updateTicket?.state)
     }
 }
 

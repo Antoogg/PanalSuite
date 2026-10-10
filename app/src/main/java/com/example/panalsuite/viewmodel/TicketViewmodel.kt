@@ -25,4 +25,15 @@ class TicketViewModel(
     fun getTicketById(id: String): Ticket? {
         return _tickets.value.find { it.id == id }
     }
+
+    fun updateTicketStatus(ticketId: String, newStatus: String) {
+        _tickets.value = tickets.value.map { ticket ->
+            if (ticket.id == ticketId) {
+                ticket.copy(state = newStatus)
+            } else {
+                ticket
+            }
+
+        }
+    }
 }
