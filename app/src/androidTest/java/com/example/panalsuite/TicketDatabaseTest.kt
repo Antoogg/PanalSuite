@@ -154,5 +154,36 @@ class TicketDatabaseTest {
 
         org.junit.Assert.assertNull(deletedTicket)
     }
+
+
+    @Test
+    fun createTicketSavesToDatabase() = runBlocking {
+        val repository = com.example.panalsuite.repository.TicketRepository()
+        val dao = database.ticketDao()
+
+        val ticket = TicketEntity(
+            id = "TK-CREATE-001",
+            workflowType = "Mesa de Ayuda",
+            category = "Falla de impresora",
+            priority = "Alta",
+            state = "Pendiente",
+            creationDate = "2026-10-11",
+            updateDate = "2026-10-11",
+            location = "Sucursal Centro",
+            applicantRole = "Solicitante",
+            resolverTeam = "Sin asignar",
+            responsible = "Sin asignar"
+        )
+
+        repository.saveTicketToDatabase(dao, ticket)
+
+        val savedTicket = dao.getTicketById("TK-CREATE-001")
+
+        assertNotNull(savedTicket)
+        assertEquals("Mesa de Ayuda", savedTicket?.workflowType)
+        assertEquals("Falla de impresora", savedTicket?.category)
+        assertEquals("Pendiente", savedTicket?.state)
+    }
+
 }
 
