@@ -24,6 +24,13 @@ class TicketRepository {
     ){
         dao.insertTicket(ticketEntity)
     }
+
+    suspend fun deleteTicketFromDatabase(
+        dao: TicketDao,
+        ticketId: String
+    ) {
+        dao.deleteTicket(ticketId)
+    }
     fun getTickets(): List<Ticket>{
         return listOf(
             Ticket(

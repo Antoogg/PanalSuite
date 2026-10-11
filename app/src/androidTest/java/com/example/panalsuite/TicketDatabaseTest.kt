@@ -125,5 +125,34 @@ class TicketDatabaseTest {
 
         assertEquals("Resuelto", updateTicket?.state)
     }
+    @Test
+    fun deleteTicketRemovesItFromDatabase() = runBlocking {
+        val ticket = TicketEntity(
+            id = "TK-TEST-003",
+            workflowType = "Mesa de Ayuda",
+            category = "Soporte TI",
+            priority = "Alta",
+            state = "Pendiente",
+            creationDate = "2026-10-11",
+            updateDate = "2026-10-11",
+            location = "Sucursal Centro",
+            applicantRole = "Solicitante",
+            resolverTeam = "Soporte TI",
+            responsible = "Sin asignar"
+        )
+
+        val repository = com.example.panalsuite.repository.TicketRepository()
+        val dao = database.ticketDao()
+
+        repository.saveTicketToDatabase(dao, ticket)
+
+        assertNotNull(dao.getTicketById("TK-TEST-003"))
+
+        repository.deleteTicketFromDatabase(dao, "TK-TEST-003")
+
+        val deletedTicket = dao.getTicketById("TK-TEST-003")
+
+        org.junit.Assert.assertNull(deletedTicket)
+    }
 }
 
