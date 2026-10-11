@@ -14,7 +14,7 @@ data class TicketEntity(
     val creationDate: String,
     val updateDate: String,
     val location: String,
-    val applicationRole: String,
+    val applicantRole: String,
     val resolverTeam: String,
     val responsible: String
 

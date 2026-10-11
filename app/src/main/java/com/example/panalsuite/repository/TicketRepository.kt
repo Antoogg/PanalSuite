@@ -1,8 +1,29 @@
 package com.example.panalsuite.repository
+import com.example.panalsuite.data.local.TicketDao
+import com.example.panalsuite.data.local.TicketEntity
 import com.example.panalsuite.model.Ticket
+import kotlinx.coroutines.flow.Flow
 import kotlin.String
 
 class TicketRepository {
+
+    suspend fun getTicketFromDatabase(
+        dao: TicketDao,
+        ticketId: String
+    ): TicketEntity? {
+        return dao.getTicketById(ticketId)
+    }
+
+    fun getTicketsFromDatabase(dao: TicketDao): Flow<List<TicketEntity>> {
+        return dao.getAllTickets()
+    }
+
+    suspend fun saveTicketToDatabase(
+        dao: TicketDao,
+        ticketEntity: TicketEntity
+    ){
+        dao.insertTicket(ticketEntity)
+    }
     fun getTickets(): List<Ticket>{
         return listOf(
             Ticket(

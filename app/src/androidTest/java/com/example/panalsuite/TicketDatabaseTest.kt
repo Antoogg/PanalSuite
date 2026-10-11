@@ -46,7 +46,7 @@ class TicketDatabaseTest {
             creationDate = "2026-10-10",
             updateDate = "2026-10-10",
             location = "Sucursal Centro",
-            applicationRole = "Solicitante",
+            applicantRole = "Solicitante",
             resolverTeam = "Soporte TI",
             responsible = "Sin asignar"
         )
@@ -79,7 +79,7 @@ class TicketDatabaseTest {
                 creationDate = "2026-10-10",
                 updateDate = "2026-10-10",
                 location = "Sucursal Centro",
-                applicationRole = "Solicitante",
+                applicantRole = "Solicitante",
                 resolverTeam = "Soporte TI",
                 responsible = "Sin asignar"
             )

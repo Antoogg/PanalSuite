@@ -23,5 +23,12 @@ class LoginViewModel : ViewModel() {
             return
         }
         val user = repository.login(email, password)
+
+        if (user != null) {
+            _loggerUser.value = user
+            _errorMessage.value = null
+        } else {
+            _errorMessage.value = "Correo o contraseña incorrectos"
+        }
     }
 }
