@@ -4,7 +4,9 @@ import com.example.panalsuite.data.local.TicketDao
 import com.example.panalsuite.data.local.TicketEntity
 import com.example.panalsuite.model.Ticket
 import kotlinx.coroutines.flow.Flow
-import kotlin.String
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class TicketRepository {
 
@@ -24,6 +26,19 @@ class TicketRepository {
         ticketEntity: TicketEntity
     ) {
         dao.insertTicket(ticketEntity)
+    }
+
+    suspend fun updateTicketStatusInDatabase(
+        dao: TicketDao,
+        ticketId: String,
+        newStatus: String
+    ) {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        dao.updateTicketStatus(
+            ticketId = ticketId,
+            newStatus = newStatus,
+            updateDate = today
+        )
     }
 
     suspend fun deleteTicketFromDatabase(

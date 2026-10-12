@@ -7,7 +7,7 @@ import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface TicketDao{
+interface TicketDao {
 
     @Query("SELECT * FROM tickets")
     fun getAllTickets(): Flow<List<TicketEntity>>
@@ -21,9 +21,10 @@ interface TicketDao{
     @Query("DELETE FROM tickets WHERE id = :ticketId")
     suspend fun deleteTicket(ticketId: String)
 
-    @Query("UPDATE tickets SET state = :newStatus WHERE id = :ticketId")
+    @Query("UPDATE tickets SET state = :newStatus, updateDate = :updateDate WHERE id = :ticketId")
     suspend fun updateTicketStatus(
         ticketId: String,
-        newStatus: String
+        newStatus: String,
+        updateDate: String
     )
 }

@@ -17,6 +17,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,10 +25,23 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.panalsuite.data.local.CommentEntity
+import com.example.panalsuite.data.local.DatabaseProvider
 import com.example.panalsuite.viewmodel.TicketViewModel
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,9 +51,27 @@ fun TicketDetailScreen(
     onBack: () -> Unit = {},
     onAddEvidence: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
     val tickets by viewModel.tickets.collectAsState()
     val ticket = tickets.find { it.id == ticketId }
-    val scrollState = rememberScrollState()
+
+    val commentDao = remember {
+        DatabaseProvider.getDatabase(context).commentDao()
+    }
+
+    val comments by produceState(
+        initialValue = emptyList<CommentEntity>(),
+        key1 = ticketId
+    ) {
+        commentDao.getCommentsByTicket(ticketId).collect { list ->
+            value = list
+        }
+    }
+
+    var newCommentText by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -126,18 +158,14 @@ fun TicketDetailScreen(
                 )
 
                 OutlinedButton(
-                    onClick = {
-                        viewModel.updateTicketStatus(ticketId, "En Proceso")
-                    },
+                    onClick = { viewModel.updateTicketStatus(ticketId, "En Proceso") },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Cambiar estado a 'En Proceso'")
                 }
 
                 OutlinedButton(
-                    onClick = {
-                        viewModel.updateTicketStatus(ticketId, "Resuelto")
-                    },
+                    onClick = { viewModel.updateTicketStatus(ticketId, "Resuelto") },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Marcar como 'Resuelto'")
@@ -148,6 +176,84 @@ fun TicketDetailScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Adjuntar evidencia de cámara")
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                Text(
+                    text = "Comentarios y Observaciones (${comments.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                OutlinedTextField(
+                    value = newCommentText,
+                    onValueChange = { newCommentText = it },
+                    label = { Text("Escribir comentario...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
+                )
+
+                Button(
+                    onClick = {
+                        if (newCommentText.isNotBlank()) {
+                            val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+                            val comment = CommentEntity(
+                                id = UUID.randomUUID().toString(),
+                                ticketId = ticketId,
+                                author = "Soporte",
+                                text = newCommentText.trim(),
+                                date = currentDate
+                            )
+                            coroutineScope.launch {
+                                commentDao.insertComment(comment)
+                                newCommentText = ""
+                            }
+                        }
+                    },
+                    enabled = newCommentText.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Agregar comentario")
+                }
+
+                if (comments.isEmpty()) {
+                    Text(
+                        text = "No hay comentarios registrados en esta solicitud.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                } else {
+                    comments.forEach { comment ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = comment.author,
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                    Text(
+                                        text = comment.date,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = comment.text,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

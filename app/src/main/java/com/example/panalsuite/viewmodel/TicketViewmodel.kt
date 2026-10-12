@@ -80,13 +80,22 @@ class TicketViewModel(
     }
 
     fun updateTicketStatus(ticketId: String, newStatus: String) {
-        val dao = ticketDao ?: return
+        val dao = ticketDao
 
         viewModelScope.launch {
-            dao.updateTicketStatus(
-                ticketId = ticketId,
-                newStatus = newStatus
-            )
+            if (dao != null) {
+                repository.updateTicketStatusInDatabase(dao, ticketId, newStatus)
+            } else {
+                val updatedList = _tickets.value.map { ticket ->
+                    if (ticket.id == ticketId) {
+                        ticket.copy(state = newStatus)
+                    } else {
+                        ticket
+                    }
+                }
+                _tickets.value = updatedList
+                _uiState.value = TicketUiState.Success(updatedList)
+            }
         }
     }
 
@@ -102,7 +111,7 @@ class TicketViewModel(
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        if (category.isBlank() || priority.isBlank() || location.isBlank() || responsible.isBlank() || description.isBlank()) {
+        if (category.isBlank() || priority.isBlank() || location.isBlank() || description.isBlank()) {
             onError("Por favor completa los campos requeridos (*).")
             return
         }
@@ -123,7 +132,7 @@ class TicketViewModel(
             location = location,
             applicantRole = applicantRole.ifBlank { "Solicitante" },
             resolverTeam = resolverTeam.ifBlank { "Soporte TI" },
-            responsible = responsible,
+            responsible = responsible.ifBlank { "Sin asignar" },
             description = description
         )
 
