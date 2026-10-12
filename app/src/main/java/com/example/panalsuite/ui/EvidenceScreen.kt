@@ -152,14 +152,14 @@ fun EvidenceScreen(
                     onClick = { cameraLauncher.launch() },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("📷 Tomar Foto")
+                    Text("Tomar Foto")
                 }
 
                 OutlinedButton(
                     onClick = { galleryPicker.launch("image/*") },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("📁 Galería")
+                    Text("Galería")
                 }
             }
 

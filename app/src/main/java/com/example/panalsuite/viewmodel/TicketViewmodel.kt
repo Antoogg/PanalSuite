@@ -2,100 +2,83 @@ package com.example.panalsuite.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.panalsuite.data.local.DatabaseProvider
-import com.example.panalsuite.data.local.TicketDao
-import com.example.panalsuite.data.local.TicketEntity
 import com.example.panalsuite.model.Ticket
-import com.example.panalsuite.repository.TicketRepository
+import com.example.panalsuite.model.User
+import com.example.panalsuite.model.UserRole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
-class TicketViewModel(
-    private val repository: TicketRepository = TicketRepository()
-) : ViewModel() {
+class TicketViewModel : ViewModel() {
 
-    private var ticketDao: TicketDao? = null
+    // Lista base de demostración para visualización inicial
+    private val initialTickets = mutableListOf(
+        Ticket(
+            id = "TK-1001",
+            workflowType = "Mesa de Ayuda",
+            category = "Impresora",
+            priority = "Alta",
+            state = "Pendiente",
+            creationDate = "2026-10-10",
+            updateDate = "2026-10-10",
+            location = "Sucursal Central",
+            applicantRole = "Solicitante",
+            resolverTeam = "Soporte TI",
+            responsible = "Carlos Pérez",
+            description = "Falla al imprimir documentos a color."
+        ),
+        Ticket(
+            id = "TK-1002",
+            workflowType = "Mesa de Ayuda",
+            category = "Red",
+            priority = "Media",
+            state = "En Proceso",
+            creationDate = "2026-10-11",
+            updateDate = "2026-10-12",
+            location = "Sucursal Norte",
+            applicantRole = "Solicitante",
+            resolverTeam = "Redes e Infraestructura",
+            responsible = "María Gómez",
+            description = "Cortes intermitentes de conexión a Internet."
+        )
+    )
 
-    private val _uiState = MutableStateFlow<TicketUiState>(TicketUiState.Loading)
+    private val _uiState = MutableStateFlow<TicketUiState>(TicketUiState.Success(initialTickets))
     val uiState: StateFlow<TicketUiState> = _uiState.asStateFlow()
 
-    private val _tickets = MutableStateFlow<List<Ticket>>(emptyList())
-    val tickets: StateFlow<List<Ticket>> = _tickets.asStateFlow()
+    private val _currentUser = MutableStateFlow(
+        User(
+            id = "USR-001",
+            name = "Carlos López",
+            email = "carlos@empresa.com",
+            role = UserRole.ADMINISTRATOR
+        )
+    )
+    val currentUser: StateFlow<User> = _currentUser.asStateFlow()
 
-    init {
-        loadTickets()
+    // Método para cambiar el rol activamente durante las pruebas
+    fun setCurrentUserRole(role: UserRole) {
+        _currentUser.value = _currentUser.value.copy(role = role)
     }
 
-    fun initializeDatabase(context: Context) {
-        ticketDao = DatabaseProvider.getDatabase(context).ticketDao()
-        loadTicketsFromDatabase()
-    }
-
-    fun loadTicketsFromDatabase() {
-        val dao = ticketDao ?: return
-
-        viewModelScope.launch {
-            _uiState.value = TicketUiState.Loading
-            try {
-                repository.getTicketsFromDatabase(dao).collect { entities ->
-                    val ticketList = entities.map { entity ->
-                        Ticket(
-                            id = entity.id,
-                            workflowType = entity.workflowType,
-                            category = entity.category,
-                            priority = entity.priority,
-                            state = entity.state,
-                            creationDate = entity.creationDate,
-                            updateDate = entity.updateDate,
-                            location = entity.location,
-                            applicantRole = entity.applicantRole,
-                            resolverTeam = entity.resolverTeam,
-                            responsible = entity.responsible,
-                            description = entity.description
-                        )
-                    }
-                    _tickets.value = ticketList
-                    _uiState.value = TicketUiState.Success(ticketList)
-                }
-            } catch (e: Exception) {
-                _uiState.value = TicketUiState.Error("Error al cargar tickets desde la base de datos.")
-            }
+    fun canCreateTicket(): Boolean {
+        return when (_currentUser.value.role) {
+            UserRole.APPLICANT, UserRole.SUPERVISOR, UserRole.ADMINISTRATOR -> true
+            UserRole.RESOLVER, UserRole.MANAGEMENT -> false
         }
     }
 
-    private fun loadTickets() {
-        val list = repository.getTickets()
-        _tickets.value = list
-        _uiState.value = TicketUiState.Success(list)
+    fun canChangeStatus(): Boolean {
+        return when (_currentUser.value.role) {
+            UserRole.RESOLVER, UserRole.SUPERVISOR, UserRole.MANAGEMENT, UserRole.ADMINISTRATOR -> true
+            UserRole.APPLICANT -> false
+        }
     }
 
-    fun getTicketById(id: String): Ticket? {
-        return _tickets.value.find { it.id == id }
-    }
-
-    fun updateTicketStatus(ticketId: String, newStatus: String) {
-        val dao = ticketDao
-
-        viewModelScope.launch {
-            if (dao != null) {
-                repository.updateTicketStatusInDatabase(dao, ticketId, newStatus)
-            } else {
-                val updatedList = _tickets.value.map { ticket ->
-                    if (ticket.id == ticketId) {
-                        ticket.copy(state = newStatus)
-                    } else {
-                        ticket
-                    }
-                }
-                _tickets.value = updatedList
-                _uiState.value = TicketUiState.Success(updatedList)
-            }
+    fun canAddEvidence(): Boolean {
+        return when (_currentUser.value.role) {
+            UserRole.RESOLVER, UserRole.SUPERVISOR, UserRole.ADMINISTRATOR -> true
+            UserRole.APPLICANT, UserRole.MANAGEMENT -> false
         }
     }
 
@@ -111,54 +94,51 @@ class TicketViewModel(
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        if (category.isBlank() || priority.isBlank() || location.isBlank() || description.isBlank()) {
-            onError("Por favor completa los campos requeridos (*).")
+        if (workflowType.isBlank() || category.isBlank() || priority.isBlank() || location.isBlank() || description.isBlank()) {
+            onError("Por favor completa todos los campos obligatorios.")
             return
         }
 
-        val dao = ticketDao
-        val newId = "TK-${System.currentTimeMillis().toString().takeLast(4)}"
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val currentDate = dateFormat.format(Date())
+        try {
+            val newTicket = Ticket(
+                id = "TK-${(1000..9999).random()}",
+                workflowType = workflowType,
+                category = category,
+                priority = priority,
+                state = "Pendiente",
+                creationDate = "2026-10-12",
+                updateDate = "2026-10-12",
+                location = location,
+                applicantRole = applicantRole,
+                resolverTeam = resolverTeam,
+                responsible = responsible,
+                description = description
+            )
 
-        val newEntity = TicketEntity(
-            id = newId,
-            workflowType = workflowType.ifBlank { "Mesa de Ayuda" },
-            category = category,
-            priority = priority,
-            state = "Pendiente",
-            creationDate = currentDate,
-            updateDate = currentDate,
-            location = location,
-            applicantRole = applicantRole.ifBlank { "Solicitante" },
-            resolverTeam = resolverTeam.ifBlank { "Soporte TI" },
-            responsible = responsible.ifBlank { "Sin asignar" },
-            description = description
-        )
+            val currentList = (_uiState.value as? TicketUiState.Success)?.tickets ?: emptyList()
+            _uiState.value = TicketUiState.Success(currentList + newTicket)
 
-        viewModelScope.launch {
-            if (dao != null) {
-                repository.saveTicketToDatabase(dao, newEntity)
-            } else {
-                val newTicket = Ticket(
-                    id = newEntity.id,
-                    workflowType = newEntity.workflowType,
-                    category = newEntity.category,
-                    priority = newEntity.priority,
-                    state = newEntity.state,
-                    creationDate = newEntity.creationDate,
-                    updateDate = newEntity.updateDate,
-                    location = newEntity.location,
-                    applicantRole = newEntity.applicantRole,
-                    resolverTeam = newEntity.resolverTeam,
-                    responsible = newEntity.responsible,
-                    description = newEntity.description
-                )
-                val updatedList = _tickets.value + newTicket
-                _tickets.value = updatedList
-                _uiState.value = TicketUiState.Success(updatedList)
-            }
             onSuccess()
+        } catch (e: Exception) {
+            onError(e.localizedMessage ?: "Error al guardar la solicitud")
+        }
+    }
+
+    fun updateTicketStatus(ticketId: String, newStatus: String) {
+        val currentList = (_uiState.value as? TicketUiState.Success)?.tickets ?: return
+        val updatedList = currentList.map { ticket ->
+            if (ticket.id == ticketId) {
+                ticket.copy(state = newStatus, updateDate = "2026-10-12")
+            } else {
+                ticket
+            }
+        }
+        _uiState.value = TicketUiState.Success(updatedList)
+    }
+
+    fun initializeDatabase(context: Context) {
+        if (_uiState.value is TicketUiState.Loading) {
+            _uiState.value = TicketUiState.Success(initialTickets)
         }
     }
 }

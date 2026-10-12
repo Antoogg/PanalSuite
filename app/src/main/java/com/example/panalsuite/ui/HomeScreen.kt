@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.panalsuite.model.Ticket
 import com.example.panalsuite.viewmodel.TicketUiState
@@ -28,6 +27,8 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
+    val canCreateTicket = viewModel.canCreateTicket()
 
     LaunchedEffect(Unit) {
         viewModel.initializeDatabase(context)
@@ -35,6 +36,8 @@ fun HomeScreen(
 
     HomeScreenContent(
         uiState = uiState,
+        roleName = currentUser.role.name,
+        canCreateTicket = canCreateTicket,
         onTicketClick = onTicketClick,
         onCreateTicketClick = onCreateTicketClick
     )
@@ -44,32 +47,33 @@ fun HomeScreen(
 @Composable
 fun HomeScreenContent(
     uiState: TicketUiState,
+    roleName: String,
+    canCreateTicket: Boolean,
     onTicketClick: (String) -> Unit,
     onCreateTicketClick: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text("Bandeja de Entrada - PanalSuite")
-                }
+                title = { Text("Bandeja ($roleName) - PanalSuite") }
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onCreateTicketClick,
-                icon = {
-                    Text(
-                        text = "+",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = { Text("Nueva solicitud") }
-            )
+            if (canCreateTicket) {
+                ExtendedFloatingActionButton(
+                    onClick = onCreateTicketClick,
+                    icon = {
+                        Text(
+                            text = "+",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    text = { Text("Nueva solicitud") }
+                )
+            }
         }
     ) { padding ->
-
         Box(
             modifier = Modifier
                 .padding(padding)
@@ -164,30 +168,4 @@ fun TicketItemCard(
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    HomeScreenContent(
-        uiState = TicketUiState.Success(
-            listOf(
-                Ticket(
-                    id = "TK-2001",
-                    workflowType = "Mesa de Ayuda",
-                    category = "Impresora",
-                    priority = "Alta",
-                    state = "Pendiente",
-                    creationDate = "2026-09-01",
-                    updateDate = "2026-09-02",
-                    location = "Centro",
-                    applicantRole = "Solicitante",
-                    resolverTeam = "Soporte TI",
-                    responsible = "Carlos Pérez",
-                    description = "Falla de impresora"
-                )
-            )
-        ),
-        onTicketClick = {}
-    )
 }
