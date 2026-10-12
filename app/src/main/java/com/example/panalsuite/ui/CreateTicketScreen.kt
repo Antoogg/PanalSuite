@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,7 +29,8 @@ import java.util.UUID
 
 @Composable
 fun CreateTicketScreen(
-    dao: TicketDao
+    dao: TicketDao,
+    onBack: () -> Unit ={}
 ) {
     var workflowType by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
@@ -124,7 +126,7 @@ fun CreateTicketScreen(
                             category = ""
                             priority = ""
                             location = ""
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             errorsMessage = "No se pudo guardar la solicitud"
                             successMessage = ""
                         }
@@ -141,6 +143,11 @@ fun CreateTicketScreen(
                 text = successMessage,
                 color = MaterialTheme.colorScheme.primary
             )
+        }
+        TextButton(
+            onClick = onBack
+        ) {
+            Text("Volver")
         }
 
 

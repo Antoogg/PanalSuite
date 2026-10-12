@@ -64,12 +64,13 @@ class TicketViewModel(
     }
 
     fun updateTicketStatus(ticketId: String, newStatus: String) {
-        _tickets.value = tickets.value.map { ticket ->
-            if (ticket.id == ticketId) {
-                ticket.copy(state = newStatus)
-            } else {
-                ticket
-            }
+        val dao = ticketDao ?: return
+
+        viewModelScope.launch {
+            dao.updateTicketStatus(
+                ticketId = ticketId,
+                newStatus = newStatus
+            )
 
         }
     }

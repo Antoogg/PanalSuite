@@ -19,7 +19,8 @@ import com.example.panalsuite.viewmodel.TicketViewModel
 fun TicketDetailScreen(
     ticketId: String,
     viewModel: TicketViewModel = viewModel(),
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onAddEvidence: () -> Unit = {}
 ){
     val ticket = viewModel.getTicketById(ticketId)
 
@@ -29,7 +30,7 @@ fun TicketDetailScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp )
 
-    ){
+    ) {
         Text(text = "Detalle de solicitud")
 
         if (ticket == null) {
@@ -47,7 +48,7 @@ fun TicketDetailScreen(
                     )
                 },
                 modifier = Modifier.fillMaxWidth()
-            ){
+            ) {
                 Text("Cambiar proceso")
             }
             Button(
@@ -58,10 +59,19 @@ fun TicketDetailScreen(
                     )
                 },
                 modifier = Modifier.fillMaxWidth()
-            ){
+            ) {
                 Text("Marcar como Resuelto")
             }
+
+            Button(
+                onClick = onAddEvidence,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Adjuntar evidencia")
+            }
+
         }
+
         TextButton(onClick = onBack) {
             Text("Volver")
         }

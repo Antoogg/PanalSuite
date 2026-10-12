@@ -21,4 +21,10 @@ interface TicketDao{
     @Query("DELETE FROM tickets WHERE id = :ticketId")
     suspend fun deleteTicket(ticketId: String)
 
+    @Query("UPDATE tickets SET state = :newStatus WHERE id = :ticketId")
+    suspend fun updateTicketStatus(
+        ticketId: String,
+        newStatus: String
+    )
+
 }

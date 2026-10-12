@@ -18,13 +18,15 @@ import com.example.panalsuite.viewmodel.TicketViewModel
 @Composable
 fun HomeScreen(
     viewModel: TicketViewModel,
-    onTicketClick: (String) -> Unit
+    onTicketClick: (String) -> Unit,
+    onCreateTicketClick: () -> Unit = {}
 ) {
     val tickets by viewModel.tickets.collectAsState()
 
     HomeScreenContent(
         tickets = tickets,
-        onTicketClick = onTicketClick
+        onTicketClick = onTicketClick,
+        onCreateTicketClick = onCreateTicketClick
     )
 }
 
@@ -32,11 +34,27 @@ fun HomeScreen(
 @Composable
 fun HomeScreenContent(
     tickets: List<Ticket>,
-    onTicketClick: (String) -> Unit
+    onTicketClick: (String) -> Unit,
+    onCreateTicketClick: () -> Unit = {}
 ) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Bandeja de Entrada - PanalSuite") }) }
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Bandeja de Entrada - PanalSuite")
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onCreateTicketClick
+            ) {
+                Text("Nueva solicitud")
+            }
+
+        }
     ) { padding ->
+
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
@@ -45,7 +63,12 @@ fun HomeScreenContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(tickets) { ticket ->
-                TicketItemCard(ticket = ticket, onClick = { onTicketClick(ticket.id) })
+                TicketItemCard(
+                    ticket = ticket,
+                    onClick = {
+                        onTicketClick(ticket.id)
+                    }
+                )
             }
         }
     }
