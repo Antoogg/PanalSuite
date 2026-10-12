@@ -16,6 +16,6 @@ data class TicketEntity(
     val location: String,
     val applicantRole: String,
     val resolverTeam: String,
-    val responsible: String
-
+    val responsible: String,
+    val description: String
 )

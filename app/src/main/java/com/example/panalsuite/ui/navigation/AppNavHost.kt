@@ -2,6 +2,7 @@ package com.example.panalsuite.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -10,8 +11,8 @@ import androidx.navigation.navArgument
 import com.example.panalsuite.data.local.DatabaseProvider
 import com.example.panalsuite.ui.CreateTicketScreen
 import com.example.panalsuite.ui.EvidenceScreen
-import com.example.panalsuite.ui.LoginScreen
 import com.example.panalsuite.ui.HomeScreen
+import com.example.panalsuite.ui.LoginScreen
 import com.example.panalsuite.ui.TicketDetailScreen
 import com.example.panalsuite.viewmodel.TicketViewModel
 
@@ -24,14 +25,14 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = Routes.LOGIN
     ) {
 
-        composable("login") {
+        composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.LOGIN) {
                             inclusive = true
                         }
                     }
@@ -39,23 +40,21 @@ fun AppNavHost(
             )
         }
 
-        composable("home") {
+        composable(Routes.HOME) {
             HomeScreen(
                 viewModel = ticketViewModel,
                 onTicketClick = { ticketId ->
-                    navController.navigate("ticket_detail/$ticketId")
+                    navController.navigate(Routes.ticketDetail(ticketId))
                 },
                 onCreateTicketClick = {
-                    navController.navigate("create_ticket")
+                    navController.navigate(Routes.CREATE_TICKET)
                 }
             )
         }
 
-        composable("create_ticket") {
+        composable(Routes.CREATE_TICKET) {
             CreateTicketScreen(
-                dao = DatabaseProvider
-                    .getDatabase(context)
-                    .ticketDao(),
+                viewModel = ticketViewModel,
                 onBack = {
                     navController.popBackStack()
                 }
@@ -63,7 +62,7 @@ fun AppNavHost(
         }
 
         composable(
-            route = "ticket_detail/{ticketId}",
+            route = Routes.TICKET_DETAIL,
             arguments = listOf(
                 navArgument("ticketId") {
                     type = NavType.StringType
@@ -82,14 +81,13 @@ fun AppNavHost(
                     navController.popBackStack()
                 },
                 onAddEvidence = {
-                    navController.navigate("evidence/$ticketId")
+                    navController.navigate(Routes.evidence(ticketId))
                 }
-
             )
-
         }
+
         composable(
-            route = "evidence/{ticketId}",
+            route = Routes.EVIDENCE,
             arguments = listOf(
                 navArgument("ticketId") {
                     type = NavType.StringType

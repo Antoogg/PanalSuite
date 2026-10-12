@@ -2,78 +2,181 @@ package com.example.panalsuite.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.panalsuite.viewmodel.TicketViewModel
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TicketDetailScreen(
     ticketId: String,
-    viewModel: TicketViewModel = viewModel(),
+    viewModel: TicketViewModel,
     onBack: () -> Unit = {},
     onAddEvidence: () -> Unit = {}
-){
-    val ticket = viewModel.getTicketById(ticketId)
+) {
+    val tickets by viewModel.tickets.collectAsState()
+    val ticket = tickets.find { it.id == ticketId }
+    val scrollState = rememberScrollState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Detalle de Solicitud") }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            if (ticket == null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = "Solicitud no encontrada.",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            } else {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = ticket.id,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Prioridad: ${ticket.priority}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
 
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        DetailRow(label = "Tipo", value = ticket.workflowType)
+                        DetailRow(label = "Categoría", value = ticket.category)
+                        DetailRow(label = "Estado actual", value = ticket.state)
+                        DetailRow(label = "Ubicación", value = ticket.location)
+                        DetailRow(label = "Responsable", value = ticket.responsible)
+                        DetailRow(label = "Equipo resolutor", value = ticket.resolverTeam)
+                        DetailRow(label = "Fecha creación", value = ticket.creationDate)
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        Text(
+                            text = "Descripción:",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = ticket.description,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Acciones",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                OutlinedButton(
+                    onClick = {
+                        viewModel.updateTicketStatus(ticketId, "En Proceso")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cambiar estado a 'En Proceso'")
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        viewModel.updateTicketStatus(ticketId, "Resuelto")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Marcar como 'Resuelto'")
+                }
+
+                Button(
+                    onClick = onAddEvidence,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Adjuntar evidencia de cámara")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Volver")
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = "Detalle de solicitud")
-
-        if (ticket == null) {
-            Text(text = "Solicitud no encontrada")
-        } else {
-            Text(text = "Código: ${ticket.id}")
-            Text(text = "Categoría: ${ticket.category}")
-            Text(text = "Estado actual: ${ticket.state}")
-
-            Button(
-                onClick = {
-                    viewModel.updateTicketStatus(
-                        ticketId,
-                        "En proceso"
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cambiar proceso")
-            }
-            Button(
-                onClick = {
-                    viewModel.updateTicketStatus(
-                        ticketId,
-                        "Resuelto"
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Marcar como Resuelto")
-            }
-
-            Button(
-                onClick = onAddEvidence,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Adjuntar evidencia")
-            }
-
-        }
-
-        TextButton(onClick = onBack) {
-            Text("Volver")
-        }
+        Text(
+            text = "$label:",
+            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }

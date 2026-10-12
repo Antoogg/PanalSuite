@@ -26,5 +26,4 @@ interface TicketDao{
         ticketId: String,
         newStatus: String
     )
-
 }

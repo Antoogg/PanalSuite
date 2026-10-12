@@ -1,12 +1,11 @@
 package com.example.panalsuite.repository
 
-import android.provider.ContactsContract
 import com.example.panalsuite.model.User
 import com.example.panalsuite.model.UserRole
 
 class UserRepository {
 
-    private val user = listOf(
+    private val users = listOf(
         User(
             id = "USR-001",
             name = "Usuario Solicitante",
@@ -35,15 +34,16 @@ class UserRepository {
             id  = "USR-005",
             name = "Usuario Administrador",
             email = "admin@panalsuite.cl",
-            role = UserRole.RESOLVER
+            role = UserRole.ADMINISTRATOR
         )
     )
+
     fun login(email: String, password: String): User? {
         if (password != "123456") {
             return null
         }
 
-        return user.find { user ->
+        return users.find { user ->
             user.email.equals(email.trim(), ignoreCase = true)
         }
     }
