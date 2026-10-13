@@ -5,13 +5,13 @@ import androidx.lifecycle.ViewModel
 import com.example.panalsuite.model.Ticket
 import com.example.panalsuite.model.User
 import com.example.panalsuite.model.UserRole
+import com.example.panalsuite.notification.NotificationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class TicketViewModel : ViewModel() {
 
-    // Lista base de demostración para visualización inicial
     private val initialTickets = mutableListOf(
         Ticket(
             id = "TK-1001",
@@ -56,7 +56,6 @@ class TicketViewModel : ViewModel() {
     )
     val currentUser: StateFlow<User> = _currentUser.asStateFlow()
 
-    // Método para cambiar el rol activamente durante las pruebas
     fun setCurrentUserRole(role: UserRole) {
         _currentUser.value = _currentUser.value.copy(role = role)
     }
@@ -83,6 +82,7 @@ class TicketViewModel : ViewModel() {
     }
 
     fun createTicket(
+        context: Context,
         workflowType: String,
         category: String,
         priority: String,
@@ -100,8 +100,9 @@ class TicketViewModel : ViewModel() {
         }
 
         try {
+            val newId = "TK-${(1000..9999).random()}"
             val newTicket = Ticket(
-                id = "TK-${(1000..9999).random()}",
+                id = newId,
                 workflowType = workflowType,
                 category = category,
                 priority = priority,
@@ -118,13 +119,18 @@ class TicketViewModel : ViewModel() {
             val currentList = (_uiState.value as? TicketUiState.Success)?.tickets ?: emptyList()
             _uiState.value = TicketUiState.Success(currentList + newTicket)
 
+            NotificationHelper(context).sendNotification(
+                title = "Solicitud Creada",
+                message = "Se ha registrado con éxito la solicitud $newId ($category)."
+            )
+
             onSuccess()
         } catch (e: Exception) {
             onError(e.localizedMessage ?: "Error al guardar la solicitud")
         }
     }
 
-    fun updateTicketStatus(ticketId: String, newStatus: String) {
+    fun updateTicketStatus(context: Context, ticketId: String, newStatus: String) {
         val currentList = (_uiState.value as? TicketUiState.Success)?.tickets ?: return
         val updatedList = currentList.map { ticket ->
             if (ticket.id == ticketId) {
@@ -134,6 +140,11 @@ class TicketViewModel : ViewModel() {
             }
         }
         _uiState.value = TicketUiState.Success(updatedList)
+
+        NotificationHelper(context).sendNotification(
+            title = "Estado Actualizado",
+            message = "La solicitud $ticketId cambió su estado a: '$newStatus'."
+        )
     }
 
     fun initializeDatabase(context: Context) {

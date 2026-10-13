@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.panalsuite.viewmodel.TicketViewModel
@@ -36,7 +37,8 @@ fun CreateTicketScreen(
     viewModel: TicketViewModel,
     onBack: () -> Unit = {}
 ) {
-    // 1. Lectura del usuario y permisos de rol
+    val context = LocalContext.current
+
     val currentUser by viewModel.currentUser.collectAsState()
     val canCreate = viewModel.canCreateTicket()
 
@@ -66,7 +68,6 @@ fun CreateTicketScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 2. Control de acceso según el rol
             if (!canCreate) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -89,7 +90,6 @@ fun CreateTicketScreen(
                     Text("Volver")
                 }
             } else {
-                // Formulario original si el rol sí tiene permiso
                 OutlinedTextField(
                     value = workflowType,
                     onValueChange = {
@@ -170,6 +170,7 @@ fun CreateTicketScreen(
                 Button(
                     onClick = {
                         viewModel.createTicket(
+                            context = context,
                             workflowType = workflowType,
                             category = category,
                             priority = priority,

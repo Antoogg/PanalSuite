@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.panalsuite.model.Ticket
@@ -19,6 +20,8 @@ fun TicketDetailScreen(
     onBackClick: () -> Unit,
     onAddEvidenceClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
     val currentUser by viewModel.currentUser.collectAsState()
     val canChangeStatus = viewModel.canChangeStatus()
     val canAddEvidence = viewModel.canAddEvidence()
@@ -71,7 +74,13 @@ fun TicketDetailScreen(
 
             if (canChangeStatus) {
                 Button(
-                    onClick = { viewModel.updateTicketStatus(ticket.id, "En Proceso") },
+                    onClick = {
+                        viewModel.updateTicketStatus(
+                            context = context,
+                            ticketId = ticket.id,
+                            newStatus = "En Proceso"
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Marcar como 'En Proceso'")

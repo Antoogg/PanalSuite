@@ -1,14 +1,30 @@
 package com.example.panalsuite
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -44,6 +60,16 @@ fun MainApp(viewModel: TicketViewModel) {
     val currentUser by viewModel.currentUser.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val permissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { }
+        )
+        LaunchedEffect(Unit) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
 
         Surface(
@@ -74,11 +100,13 @@ fun MainApp(viewModel: TicketViewModel) {
             }
         }
 
+        // Navegación entre pantallas
         Box(modifier = Modifier.weight(1f)) {
             NavHost(
                 navController = navController,
                 startDestination = "home"
             ) {
+                // Pantalla principal de la bandeja de solicitudes
                 composable("home") {
                     HomeScreen(
                         viewModel = viewModel,
@@ -111,8 +139,7 @@ fun MainApp(viewModel: TicketViewModel) {
                             ticket = ticket,
                             viewModel = viewModel,
                             onBackClick = { navController.popBackStack() },
-                            onAddEvidenceClick = {
-                            }
+                            onAddEvidenceClick = { }
                         )
                     } else {
                         Box(
