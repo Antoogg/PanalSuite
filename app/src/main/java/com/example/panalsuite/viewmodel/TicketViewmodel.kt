@@ -9,6 +9,12 @@ import com.example.panalsuite.notification.NotificationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.lifecycle.viewModelScope
+import com.example.panalsuite.data.local.DatabaseProvider
+import com.example.panalsuite.data.local.TicketEntity
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
+import java.util.UUID
 
 class TicketViewModel : ViewModel() {
 
@@ -116,13 +122,38 @@ class TicketViewModel : ViewModel() {
                 description = description
             )
 
-            val currentList = (_uiState.value as? TicketUiState.Success)?.tickets ?: emptyList()
-            _uiState.value = TicketUiState.Success(currentList + newTicket)
+            val ticketDao = DatabaseProvider.getDatabase(context).ticketDao()
 
-            NotificationHelper(context).sendNotification(
-                title = "Solicitud Creada",
-                message = "Se ha registrado con éxito la solicitud $newId ($category)."
-            )
+            viewModelScope.launch {
+                try {
+                    ticketDao.insertTicket(
+                        TicketEntity(
+                            id = newTicket.id,
+                            workflowType = newTicket.workflowType,
+                            category = newTicket.category,
+                            priority = newTicket.priority,
+                            state = newTicket.state,
+                            creationDate = newTicket.creationDate,
+                            updateDate = newTicket.updateDate,
+                            location = newTicket.location,
+                            applicantRole = newTicket.applicantRole,
+                            resolverTeam = newTicket.resolverTeam,
+                            responsible = newTicket.responsible,
+                            description = newTicket.description
+                        )
+                    )
+
+                    NotificationHelper(context).sendNotification(
+                        title = "Solicitud Creada",
+                        message = "Se ha registrado con éxito la solicitud $newId ($category)."
+                    )
+
+                    onSuccess()
+                } catch (e: Exception) {
+                    onError(e.localizedMessage ?: "Error al guardar la solicitud")
+                }
+            }
+
 
             onSuccess()
         } catch (e: Exception) {
@@ -131,25 +162,63 @@ class TicketViewModel : ViewModel() {
     }
 
     fun updateTicketStatus(context: Context, ticketId: String, newStatus: String) {
-        val currentList = (_uiState.value as? TicketUiState.Success)?.tickets ?: return
-        val updatedList = currentList.map { ticket ->
-            if (ticket.id == ticketId) {
-                ticket.copy(state = newStatus, updateDate = "2026-10-12")
-            } else {
-                ticket
+        if (!canChangeStatus()) return
+
+        viewModelScope.launch {
+            try {
+                val ticketDao = DatabaseProvider.getDatabase(context).ticketDao()
+
+                val ticket = ticketDao.getTicketById(ticketId) ?: return@launch
+
+                val updateDate = java.text.SimpleDateFormat(
+                    "yyyy-MM-dd",
+                    java.util.Locale.getDefault()
+                ).format(java.util.Date())
+
+                ticketDao.updateTicketStatus(
+                    ticketId = ticket.id,
+                    newStatus = newStatus,
+                    updateDate = updateDate
+                )
+
+                NotificationHelper(context).sendNotification(
+                    title = "Estado Actualizado",
+                    message = "La solicitud $ticketId cambió su estado a: '$newStatus'."
+                )
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "TicketViewModel",
+                    "Error al actualizar la solicitud $ticketId",
+                    e
+                )
             }
         }
-        _uiState.value = TicketUiState.Success(updatedList)
-
-        NotificationHelper(context).sendNotification(
-            title = "Estado Actualizado",
-            message = "La solicitud $ticketId cambió su estado a: '$newStatus'."
-        )
     }
 
     fun initializeDatabase(context: Context) {
-        if (_uiState.value is TicketUiState.Loading) {
-            _uiState.value = TicketUiState.Success(initialTickets)
+        val ticketDao = DatabaseProvider.getDatabase(context).ticketDao()
+
+        viewModelScope.launch {
+            ticketDao.getAllTickets().collect { entities ->
+                val tickets = entities.map { entity ->
+                    Ticket(
+                        id = entity.id,
+                        workflowType = entity.workflowType,
+                        category = entity.category,
+                        priority = entity.priority,
+                        state = entity.state,
+                        creationDate = entity.creationDate,
+                        updateDate = entity.updateDate,
+                        location = entity.location,
+                        applicantRole = entity.applicantRole,
+                        resolverTeam = entity.resolverTeam,
+                        responsible = entity.responsible,
+                        description = entity.description
+                    )
+                }
+
+                _uiState.value = TicketUiState.Success(tickets)
+            }
         }
     }
-}
+    }

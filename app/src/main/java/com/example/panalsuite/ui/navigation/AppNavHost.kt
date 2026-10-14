@@ -1,8 +1,10 @@
 package com.example.panalsuite.ui.navigation
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -14,6 +16,7 @@ import com.example.panalsuite.ui.EvidenceScreen
 import com.example.panalsuite.ui.HomeScreen
 import com.example.panalsuite.ui.LoginScreen
 import com.example.panalsuite.ui.TicketDetailScreen
+import com.example.panalsuite.viewmodel.TicketUiState
 import com.example.panalsuite.viewmodel.TicketViewModel
 
 @Composable
@@ -74,16 +77,26 @@ fun AppNavHost(
                 ?.getString("ticketId")
                 .orEmpty()
 
-            TicketDetailScreen(
-                ticketId = ticketId,
-                viewModel = ticketViewModel,
-                onBack = {
-                    navController.popBackStack()
-                },
-                onAddEvidence = {
-                    navController.navigate(Routes.evidence(ticketId))
-                }
-            )
+            val uiState by ticketViewModel.uiState.collectAsState()
+
+            val ticket = (uiState as? TicketUiState.Success)
+                ?.tickets
+                ?.find { it.id == ticketId }
+
+            if (ticket != null) {
+                TicketDetailScreen(
+                    ticket = ticket,
+                    viewModel = ticketViewModel,
+                    onBackClick = {
+                        navController.popBackStack()
+                    },
+                    onAddEvidenceClick = {
+                        navController.navigate(Routes.evidence(ticketId))
+                    }
+                )
+            } else {
+                Text("Solicitud no encontrada")
+            }
         }
 
         composable(
