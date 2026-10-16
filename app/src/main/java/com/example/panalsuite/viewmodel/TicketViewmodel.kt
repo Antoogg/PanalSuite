@@ -10,12 +10,51 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import androidx.lifecycle.viewModelScope
+import com.example.panalsuite.data.local.CommentEntity
 import com.example.panalsuite.data.local.DatabaseProvider
 import com.example.panalsuite.data.local.TicketEntity
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 
 class TicketViewModel : ViewModel() {
+
+    fun getCommentsByTicket(
+        context: Context,
+        ticketId: String
+    ): Flow<List<CommentEntity>> {
+        return DatabaseProvider
+            .getDatabase(context)
+            .commentDao()
+            .getCommentsByTicket(ticketId)
+    }
+
+    fun addComment(
+        context: Context,
+        ticketId: String,
+        text: String
+    ) {
+        if (text.isBlank()) return
+        if (_currentUser.value.role != UserRole.RESOLVER) return
+
+        val comment = CommentEntity(
+            id = UUID.randomUUID().toString(),
+            ticketId = ticketId,
+            author = _currentUser.value.name,
+            text = text.trim(),
+            date = java.text.SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss",
+                java.util.Locale.getDefault()
+            ).format(java.util.Date())
+        )
+
+        viewModelScope.launch {
+            DatabaseProvider.getDatabase(context)
+                .commentDao()
+                .insertComment(comment)
+        }
+    }
 
     private val initialTickets = mutableListOf(
         Ticket(
