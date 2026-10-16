@@ -28,7 +28,11 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = Routes.LOGIN
+        startDestination = Routes.LOGIN,
+        enterTransition = { androidx.compose.animation.EnterTransition.None },
+        exitTransition = { androidx.compose.animation.ExitTransition.None },
+        popEnterTransition = { androidx.compose.animation.EnterTransition.None },
+        popExitTransition = { androidx.compose.animation.ExitTransition.None }
     ) {
 
         composable(Routes.LOGIN) {
@@ -55,14 +59,18 @@ fun AppNavHost(
                     navController.navigate(Routes.CREATE_TICKET)
                 },
                 onLogoutClick = {
-                    ticketViewModel.logout()
-
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.HOME) {
                             inclusive = true
                         }
                         launchSingleTop = true
                     }
+                    ticketViewModel.logout()
+
+
+
+
+
                 }
             )
         }

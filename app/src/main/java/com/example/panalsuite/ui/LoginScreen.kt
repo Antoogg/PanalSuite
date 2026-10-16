@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.panalsuite.model.User
 import com.example.panalsuite.viewmodel.LoginViewModel
@@ -55,15 +57,17 @@ fun LoginScreen(
 
         Text(
             text = "PanalSuite",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "Iniciar sesión",
-            style = MaterialTheme.typography.titleMedium
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -73,6 +77,7 @@ fun LoginScreen(
             onValueChange = { email = it },
             label = { Text("Correo electrónico") },
             singleLine = true,
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -84,6 +89,7 @@ fun LoginScreen(
             label = { Text("Contraseña") },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -102,9 +108,16 @@ fun LoginScreen(
             onClick = {
                 viewModel.login(email, password)
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Ingresar")
+            Text(
+                text = "Ingresar",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

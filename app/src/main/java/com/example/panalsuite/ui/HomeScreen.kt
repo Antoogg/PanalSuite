@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.panalsuite.model.Ticket
 import com.example.panalsuite.viewmodel.TicketUiState
@@ -58,7 +59,22 @@ fun HomeScreenContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bandeja ($roleName) - PanalSuite") },
+                title = {
+                    Column {
+                        Text(
+                            text = "PanalSuite",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = roleName.lowercase()
+                                .replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
                 actions = {
                     TextButton(onClick = onLogoutClick){
                         Text("Cerrar sesión")
@@ -157,7 +173,11 @@ fun TicketItemCard(
                 Text(
                     text = ticket.id,
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                        .padding(end = 12.dp)
                 )
                 Text(
                     text = ticket.priority,

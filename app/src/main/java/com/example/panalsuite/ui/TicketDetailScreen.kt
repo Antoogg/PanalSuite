@@ -1,6 +1,8 @@
 package com.example.panalsuite.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -36,7 +38,21 @@ fun TicketDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detalle (${currentUser.role.name})") }
+                title = {
+                    Text(
+                        text = "Detalle de solicitud",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Text(
+                            text = "←",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -44,7 +60,13 @@ fun TicketDetailScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .padding(16.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = 40.dp
+                ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Card(
@@ -72,6 +94,45 @@ fun TicketDetailScreen(
                     Text(text = ticket.description)
                 }
             }
+            Text(
+                text = "Acciones disponibles",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (canChangeStatus) {
+                val nextStatus = when (ticket.state) {
+                    "Pendiente" -> "En Proceso"
+                    "En Proceso" -> "Resuelto"
+                    else -> null
+                }
+
+                if (nextStatus != null) {
+                    Button(
+                        onClick = {
+                            viewModel.updateTicketStatus(
+                                context = context,
+                                ticketId = ticket.id,
+                                newStatus = nextStatus
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Marcar como '$nextStatus'")
+                    }
+                }
+
+
+                if (canAddEvidence) {
+                    OutlinedButton(
+                        onClick = onAddEvidenceClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Adjuntar Evidencia / Foto")
+                    }
+                }
+            }
+
             Text(
                 text = "Comentarios:",
                 style = MaterialTheme.typography.titleMedium,
@@ -103,12 +164,41 @@ fun TicketDetailScreen(
                 Text("Guardar comentario")
             }
 
+            var showAllComments by remember { mutableStateOf(false) }
+            if (comments.size > 3) {
+                TextButton(
+                    onClick = { showAllComments = !showAllComments },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        if (showAllComments) {
+                            "Ver menos comentarios"
+                        } else {
+                            "Ver todos los comentarios (${comments.size})"
+                        }
+                    )
+                }
+            }
+
             if (comments.isEmpty()) {
                 Text("Todavía no hay comentarios en esta solicitud.")
             } else {
-                comments.forEach { comment ->
+
+
+                val visibleComments = if (showAllComments) {
+                    comments.asReversed()
+                } else {
+                    comments.asReversed().take(3)
+                }
+
+                visibleComments.forEach { comment ->
                     Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(
+                            modifier = Modifier.padding(
+                                horizontal = 14.dp,
+                                vertical = 8.dp
+                            )
+                        ) {
                             Text(
                                 text = comment.author,
                                 fontWeight = FontWeight.Bold
@@ -123,44 +213,7 @@ fun TicketDetailScreen(
                 }
             }
 
-            Text(
-                text = "Acciones por Rol:",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
 
-            if (canChangeStatus) {
-                val nextStatus = when (ticket.state) {
-                    "Pendiente" -> "En Proceso"
-                    "En Proceso" -> "Resuelto"
-                    else -> null
-                }
-
-                if (nextStatus != null) {
-                    Button(
-                        onClick = {
-                            viewModel.updateTicketStatus(
-                                context = context,
-                                ticketId = ticket.id,
-                                newStatus = nextStatus
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Marcar como '$nextStatus'")
-                    }
-                }
-
-
-            if (canAddEvidence) {
-                OutlinedButton(
-                    onClick = onAddEvidenceClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Adjuntar Evidencia / Foto")
-                }
-            }
-           }
 
             if (!canChangeStatus && !canAddEvidence) {
                 Card(
@@ -175,14 +228,11 @@ fun TicketDetailScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
 
-            OutlinedButton(
-                onClick = onBackClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Volver atrás")
-            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+
         }
     }
 }
