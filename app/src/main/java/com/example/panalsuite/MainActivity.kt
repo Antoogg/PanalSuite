@@ -37,6 +37,7 @@ import com.example.panalsuite.model.UserRole
 import com.example.panalsuite.ui.CreateTicketScreen
 import com.example.panalsuite.ui.HomeScreen
 import com.example.panalsuite.ui.TicketDetailScreen
+import com.example.panalsuite.ui.navigation.AppNavHost
 import com.example.panalsuite.viewmodel.TicketUiState
 import com.example.panalsuite.viewmodel.TicketViewModel
 
@@ -48,7 +49,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                MainApp(viewModel = ticketViewModel)
+                AppNavHost(ticketViewModel = ticketViewModel)
             }
         }
     }

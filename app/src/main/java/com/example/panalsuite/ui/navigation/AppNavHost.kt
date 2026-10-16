@@ -33,7 +33,9 @@ fun AppNavHost(
 
         composable(Routes.LOGIN) {
             LoginScreen(
-                onLoginSuccess = {
+                onLoginSuccess = { user ->
+                    ticketViewModel.setCurrentUser(user)
+
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.LOGIN) {
                             inclusive = true

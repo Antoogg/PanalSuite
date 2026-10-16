@@ -73,19 +73,27 @@ fun TicketDetailScreen(
             )
 
             if (canChangeStatus) {
-                Button(
-                    onClick = {
-                        viewModel.updateTicketStatus(
-                            context = context,
-                            ticketId = ticket.id,
-                            newStatus = "En Proceso"
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Marcar como 'En Proceso'")
+                val nextStatus = when (ticket.state) {
+                    "Pendiente" -> "En Proceso"
+                    "En Proceso" -> "Resuelto"
+                    else -> null
                 }
-            }
+
+                if (nextStatus != null) {
+                    Button(
+                        onClick = {
+                            viewModel.updateTicketStatus(
+                                context = context,
+                                ticketId = ticket.id,
+                                newStatus = nextStatus
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Marcar como '$nextStatus'")
+                    }
+                }
+
 
             if (canAddEvidence) {
                 OutlinedButton(
@@ -95,6 +103,7 @@ fun TicketDetailScreen(
                     Text("Adjuntar Evidencia / Foto")
                 }
             }
+           }
 
             if (!canChangeStatus && !canAddEvidence) {
                 Card(

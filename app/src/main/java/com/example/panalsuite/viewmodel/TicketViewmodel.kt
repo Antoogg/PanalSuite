@@ -13,8 +13,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.panalsuite.data.local.DatabaseProvider
 import com.example.panalsuite.data.local.TicketEntity
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.collect
-import java.util.UUID
+
 
 class TicketViewModel : ViewModel() {
 
@@ -64,6 +63,9 @@ class TicketViewModel : ViewModel() {
 
     fun setCurrentUserRole(role: UserRole) {
         _currentUser.value = _currentUser.value.copy(role = role)
+    }
+    fun setCurrentUser(user: User) {
+        _currentUser.value = user
     }
 
     fun canCreateTicket(): Boolean {
@@ -155,7 +157,7 @@ class TicketViewModel : ViewModel() {
             }
 
 
-            onSuccess()
+
         } catch (e: Exception) {
             onError(e.localizedMessage ?: "Error al guardar la solicitud")
         }

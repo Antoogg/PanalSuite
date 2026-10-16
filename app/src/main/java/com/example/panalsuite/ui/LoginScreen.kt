@@ -25,12 +25,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.panalsuite.model.User
 import com.example.panalsuite.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: (User) -> Unit = {}
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -40,7 +41,7 @@ fun LoginScreen(
 
     LaunchedEffect(loggedUser) {
         if (loggedUser != null) {
-            onLoginSuccess()
+            onLoginSuccess(loggedUser!!)
         }
     }
 

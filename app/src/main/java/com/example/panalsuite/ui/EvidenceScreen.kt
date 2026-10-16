@@ -73,7 +73,7 @@ fun EvidenceScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
-    // Selector para Galería
+
     val galleryPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -98,7 +98,7 @@ fun EvidenceScreen(
         }
     }
 
-    // Captura mediante Cámara
+
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
@@ -128,7 +128,16 @@ fun EvidenceScreen(
             TopAppBar(
                 title = { Text("Evidencias ($ticketId)") }
             )
+        },
+        bottomBar = {
+            TextButton(
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Volver")
+            }
         }
+
     ) { padding ->
         Column(
             modifier = Modifier
@@ -239,14 +248,7 @@ fun EvidenceScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
 
-            TextButton(
-                onClick = onBack,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Volver")
-            }
         }
     }
 }
