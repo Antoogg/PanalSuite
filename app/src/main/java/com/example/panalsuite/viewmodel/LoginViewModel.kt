@@ -30,4 +30,9 @@ class LoginViewModel : ViewModel() {
             _errorMessage.value = "Correo o contraseña incorrectos"
         }
     }
+
+    fun logout() {
+        _loggedUser.value = null
+        _errorMessage.value = null
+    }
 }

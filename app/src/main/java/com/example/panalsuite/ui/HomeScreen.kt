@@ -23,7 +23,8 @@ import com.example.panalsuite.viewmodel.TicketViewModel
 fun HomeScreen(
     viewModel: TicketViewModel,
     onTicketClick: (String) -> Unit,
-    onCreateTicketClick: () -> Unit = {}
+    onCreateTicketClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -39,7 +40,8 @@ fun HomeScreen(
         roleName = currentUser.role.name,
         canCreateTicket = canCreateTicket,
         onTicketClick = onTicketClick,
-        onCreateTicketClick = onCreateTicketClick
+        onCreateTicketClick = onCreateTicketClick,
+        onLogoutClick = onLogoutClick
     )
 }
 
@@ -50,12 +52,18 @@ fun HomeScreenContent(
     roleName: String,
     canCreateTicket: Boolean,
     onTicketClick: (String) -> Unit,
-    onCreateTicketClick: () -> Unit = {}
+    onCreateTicketClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bandeja ($roleName) - PanalSuite") }
+                title = { Text("Bandeja ($roleName) - PanalSuite") },
+                actions = {
+                    TextButton(onClick = onLogoutClick){
+                        Text("Cerrar sesión")
+                    }
+                }
             )
         },
         floatingActionButton = {

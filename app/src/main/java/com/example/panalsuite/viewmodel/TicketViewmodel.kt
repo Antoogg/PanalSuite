@@ -68,6 +68,15 @@ class TicketViewModel : ViewModel() {
         _currentUser.value = user
     }
 
+    fun logout() {
+        _currentUser.value = User(
+            id = "",
+            name = "",
+            email = "",
+            role = UserRole.APPLICANT
+        )
+    }
+
     fun canCreateTicket(): Boolean {
         return when (_currentUser.value.role) {
             UserRole.APPLICANT, UserRole.SUPERVISOR, UserRole.ADMINISTRATOR -> true

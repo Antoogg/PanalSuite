@@ -53,6 +53,16 @@ fun AppNavHost(
                 },
                 onCreateTicketClick = {
                     navController.navigate(Routes.CREATE_TICKET)
+                },
+                onLogoutClick = {
+                    ticketViewModel.logout()
+
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.HOME) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
                 }
             )
         }
