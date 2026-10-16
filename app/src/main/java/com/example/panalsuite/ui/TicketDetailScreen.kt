@@ -5,11 +5,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.panalsuite.model.Ticket
+import com.example.panalsuite.model.UserRole
 import com.example.panalsuite.viewmodel.TicketViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,6 +25,9 @@ fun TicketDetailScreen(
     onAddEvidenceClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val comments by viewModel
+        .getCommentsByTicket(context, ticket.id)
+        .collectAsState(initial = emptyList())
 
     val currentUser by viewModel.currentUser.collectAsState()
     val canChangeStatus = viewModel.canChangeStatus()
@@ -63,6 +70,56 @@ fun TicketDetailScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Descripción:", fontWeight = FontWeight.Bold)
                     Text(text = ticket.description)
+                }
+            }
+            Text(
+                text = "Comentarios:",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            var commentText by remember { mutableStateOf("") }
+
+            OutlinedTextField(
+                value = commentText,
+                onValueChange = { commentText = it },
+                label = { Text("Escribe un comentario") },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = currentUser.role == UserRole.RESOLVER,
+                minLines = 2,
+                maxLines = 4
+            )
+            Button(
+                onClick = {
+                    viewModel.addComment(
+                        context = context,
+                        ticketId = ticket.id,
+                        text = commentText
+                    )
+                    commentText = ""
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = commentText.isNotBlank() && currentUser.role == UserRole.RESOLVER
+            ) {
+                Text("Guardar comentario")
+            }
+
+            if (comments.isEmpty()) {
+                Text("Todavía no hay comentarios en esta solicitud.")
+            } else {
+                comments.forEach { comment ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = comment.author,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(text = comment.text)
+                            Text(
+                                text = comment.date,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
                 }
             }
 
