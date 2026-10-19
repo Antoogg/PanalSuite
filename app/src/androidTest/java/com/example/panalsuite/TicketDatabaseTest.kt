@@ -3,8 +3,8 @@ package com.example.panalsuite
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.panalsuite.data.local.PanalSuiteDatabase
-import com.example.panalsuite.data.local.TicketEntity
+import com.example.panalsuite.data.local.database.PanalSuiteDatabase
+import com.example.panalsuite.data.local.entity.TicketEntity
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals

@@ -1,5 +1,4 @@
-package com.example.panalsuite.data.local
-
+package com.example.panalsuite.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

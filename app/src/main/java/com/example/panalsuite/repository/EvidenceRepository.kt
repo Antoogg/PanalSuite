@@ -1,7 +1,7 @@
 package com.example.panalsuite.repository
 
-import com.example.panalsuite.data.local.EvidenceDao
-import com.example.panalsuite.data.local.EvidenceEntity
+import com.example.panalsuite.data.local.dao.EvidenceDao
+import com.example.panalsuite.data.local.entity.EvidenceEntity
 import kotlinx.coroutines.flow.Flow
 
 class EvidenceRepository {

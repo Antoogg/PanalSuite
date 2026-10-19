@@ -1,4 +1,4 @@
-package com.example.panalsuite.data.local
+package com.example.panalsuite.data.local.database
 
 import android.content.Context
 import androidx.room.Room
@@ -24,27 +24,38 @@ object DatabaseProvider {
             )
         }
     }
+
     private val MIGRATION_2_3 = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {
-
             db.execSQL(
                 """
-            ALTER TABLE `tickets`
-            ADD COLUMN `description` TEXT NOT NULL DEFAULT ''
-            """.trimIndent()
+                ALTER TABLE `tickets`
+                ADD COLUMN `description` TEXT NOT NULL DEFAULT ''
+                """.trimIndent()
             )
 
             db.execSQL(
                 """
-            CREATE TABLE IF NOT EXISTS `comments` (
-                `id` TEXT NOT NULL,
-                `ticketId` TEXT NOT NULL,
-                `author` TEXT NOT NULL,
-                `text` TEXT NOT NULL,
-                `date` TEXT NOT NULL,
-                PRIMARY KEY(`id`)
+                CREATE TABLE IF NOT EXISTS `comments` (
+                    `id` TEXT NOT NULL,
+                    `ticketId` TEXT NOT NULL,
+                    `author` TEXT NOT NULL,
+                    `text` TEXT NOT NULL,
+                    `date` TEXT NOT NULL,
+                    PRIMARY KEY(`id`)
+                )
+                """.trimIndent()
             )
-            """.trimIndent()
+        }
+    }
+
+    private val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                ALTER TABLE `tickets`
+                ADD COLUMN `applicantEmail` TEXT NOT NULL DEFAULT ''
+                """.trimIndent()
             )
         }
     }
@@ -56,7 +67,11 @@ object DatabaseProvider {
                 PanalSuiteDatabase::class.java,
                 "panalsuite_database"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_2_3,
+                    MIGRATION_3_4
+                )
                 .build()
                 .also { database = it }
         }

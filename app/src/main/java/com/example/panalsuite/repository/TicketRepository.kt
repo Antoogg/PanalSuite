@@ -1,8 +1,11 @@
+
 package com.example.panalsuite.repository
 
-import com.example.panalsuite.data.local.TicketDao
-import com.example.panalsuite.data.local.TicketEntity
+import com.example.panalsuite.data.local.dao.TicketDao
+import com.example.panalsuite.data.local.entity.TicketEntity
 import com.example.panalsuite.model.Ticket
+import com.example.panalsuite.network.ApiClient
+import com.example.panalsuite.network.ApiTestPost
 import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -17,7 +20,9 @@ class TicketRepository {
         return dao.getTicketById(ticketId)
     }
 
-    fun getTicketsFromDatabase(dao: TicketDao): Flow<List<TicketEntity>> {
+    fun getTicketsFromDatabase(
+        dao: TicketDao
+    ): Flow<List<TicketEntity>> {
         return dao.getAllTickets()
     }
 
@@ -33,7 +38,11 @@ class TicketRepository {
         ticketId: String,
         newStatus: String
     ) {
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val today = SimpleDateFormat(
+            "yyyy-MM-dd",
+            Locale.getDefault()
+        ).format(Date())
+
         dao.updateTicketStatus(
             ticketId = ticketId,
             newStatus = newStatus,
@@ -46,6 +55,10 @@ class TicketRepository {
         ticketId: String
     ) {
         dao.deleteTicket(ticketId)
+    }
+
+    suspend fun getPostsFromApi(): List<ApiTestPost> {
+        return ApiClient.service.getPosts()
     }
 
     fun getTickets(): List<Ticket> {

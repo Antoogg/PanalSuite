@@ -1,4 +1,4 @@
-package com.example.panalsuite.data.local
+package com.example.panalsuite.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -17,5 +17,6 @@ data class TicketEntity(
     val applicantRole: String,
     val resolverTeam: String,
     val responsible: String,
-    val description: String
+    val description: String,
+    val applicantEmail: String = ""
 )

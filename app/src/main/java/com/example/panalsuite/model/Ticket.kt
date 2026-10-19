@@ -1,3 +1,4 @@
+
 package com.example.panalsuite.model
 
 data class Ticket(
@@ -12,5 +13,6 @@ data class Ticket(
     val applicantRole: String,
     val resolverTeam: String,
     val responsible: String,
-    val description: String
+    val description: String,
+    val applicantEmail: String = ""
 )
