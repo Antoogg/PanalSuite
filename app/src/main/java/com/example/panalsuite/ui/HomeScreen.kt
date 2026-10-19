@@ -350,7 +350,7 @@ fun HomeScreenContent(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                when (val state = uiState) {
+                when (uiState) {
                     is TicketUiState.Loading -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -366,7 +366,7 @@ fun HomeScreenContent(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = state.message,
+                                text = uiState.message,
                                 color = MaterialTheme.colorScheme.error
                             )
                         }

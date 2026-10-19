@@ -1,3 +1,4 @@
+
 package com.example.panalsuite.ui
 
 import androidx.compose.foundation.layout.*
@@ -114,15 +115,14 @@ fun TicketDetailScreen(
                     Text(text = ticket.description)
                 }
             }
+
             Text(
                 text = "Acciones disponibles",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
-
             if (canAssignResponsible) {
-
                 Text(
                     text = "Asignar responsable",
                     style = MaterialTheme.typography.titleMedium,
@@ -148,7 +148,10 @@ fun TicketDetailScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor()
+                            .menuAnchor(
+                                type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                enabled = true
+                            )
                     )
 
                     ExposedDropdownMenu(
@@ -199,7 +202,6 @@ fun TicketDetailScreen(
                 }
             }
 
-
             if (canChangeStatus) {
                 val nextStatus = when (ticket.state) {
                     "Pendiente" -> "En Proceso"
@@ -222,7 +224,6 @@ fun TicketDetailScreen(
                     }
                 }
 
-
                 if (canAddEvidence) {
                     OutlinedButton(
                         onClick = onAddEvidenceClick,
@@ -238,6 +239,7 @@ fun TicketDetailScreen(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
+
             var commentText by remember { mutableStateOf("") }
 
             OutlinedTextField(
@@ -249,6 +251,7 @@ fun TicketDetailScreen(
                 minLines = 2,
                 maxLines = 4
             )
+
             Button(
                 onClick = {
                     viewModel.addComment(
@@ -259,12 +262,14 @@ fun TicketDetailScreen(
                     commentText = ""
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = commentText.isNotBlank() && currentUser.role == UserRole.RESOLVER
+                enabled = commentText.isNotBlank() &&
+                        currentUser.role == UserRole.RESOLVER
             ) {
                 Text("Guardar comentario")
             }
 
             var showAllComments by remember { mutableStateOf(false) }
+
             if (comments.size > 3) {
                 TextButton(
                     onClick = { showAllComments = !showAllComments },
@@ -283,8 +288,6 @@ fun TicketDetailScreen(
             if (comments.isEmpty()) {
                 Text("Todavía no hay comentarios en esta solicitud.")
             } else {
-
-
                 val visibleComments = if (showAllComments) {
                     comments.asReversed()
                 } else {
@@ -313,12 +316,12 @@ fun TicketDetailScreen(
                 }
             }
 
-
-
             if (!canChangeStatus && !canAddEvidence) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 ) {
                     Text(
                         text = "Modo Lectura: Tu rol (${currentUser.role.name}) no tiene permisos para realizar acciones en esta solicitud.",
@@ -328,11 +331,7 @@ fun TicketDetailScreen(
                 }
             }
 
-
-
             Spacer(modifier = Modifier.height(8.dp))
-
-
         }
     }
 }

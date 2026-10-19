@@ -125,7 +125,7 @@ fun AppNavHost(
                                             )
                             )
 
-            if (canViewTicket && ticket != null) {
+            if (canViewTicket) {
                 TicketDetailScreen(
                     ticket = ticket,
                     viewModel = ticketViewModel,

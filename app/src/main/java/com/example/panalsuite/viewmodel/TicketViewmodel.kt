@@ -1,60 +1,29 @@
+
 package com.example.panalsuite.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.panalsuite.data.local.entity.CommentEntity
+import com.example.panalsuite.data.local.database.DatabaseProvider
+import com.example.panalsuite.data.local.entity.TicketEntity
 import com.example.panalsuite.model.Ticket
 import com.example.panalsuite.model.User
 import com.example.panalsuite.model.UserRole
 import com.example.panalsuite.notification.NotificationHelper
+import com.example.panalsuite.repository.TicketRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import androidx.lifecycle.viewModelScope
-import com.example.panalsuite.data.local.CommentEntity
-import com.example.panalsuite.data.local.DatabaseProvider
-import com.example.panalsuite.data.local.TicketEntity
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
-
 class TicketViewModel : ViewModel() {
-
-    fun getCommentsByTicket(
-        context: Context,
-        ticketId: String
-    ): Flow<List<CommentEntity>> {
-        return DatabaseProvider
-            .getDatabase(context)
-            .commentDao()
-            .getCommentsByTicket(ticketId)
-    }
-
-    fun addComment(
-        context: Context,
-        ticketId: String,
-        text: String
-    ) {
-        if (text.isBlank()) return
-        if (_currentUser.value.role != UserRole.RESOLVER) return
-
-        val comment = CommentEntity(
-            id = UUID.randomUUID().toString(),
-            ticketId = ticketId,
-            author = _currentUser.value.name,
-            text = text.trim(),
-            date = java.text.SimpleDateFormat(
-                "yyyy-MM-dd HH:mm:ss",
-                java.util.Locale.getDefault()
-            ).format(java.util.Date())
-        )
-
-        viewModelScope.launch {
-            DatabaseProvider.getDatabase(context)
-                .commentDao()
-                .insertComment(comment)
-        }
-    }
 
     private val initialTickets = mutableListOf(
         Ticket(
@@ -87,7 +56,9 @@ class TicketViewModel : ViewModel() {
         )
     )
 
-    private val _uiState = MutableStateFlow<TicketUiState>(TicketUiState.Success(initialTickets))
+    private val _uiState = MutableStateFlow<TicketUiState>(
+        TicketUiState.Success(initialTickets)
+    )
     val uiState: StateFlow<TicketUiState> = _uiState.asStateFlow()
 
     private val _currentUser = MutableStateFlow(
@@ -103,6 +74,7 @@ class TicketViewModel : ViewModel() {
     fun setCurrentUserRole(role: UserRole) {
         _currentUser.value = _currentUser.value.copy(role = role)
     }
+
     fun setCurrentUser(user: User) {
         _currentUser.value = user
     }
@@ -118,22 +90,81 @@ class TicketViewModel : ViewModel() {
 
     fun canCreateTicket(): Boolean {
         return when (_currentUser.value.role) {
-            UserRole.APPLICANT, UserRole.SUPERVISOR, UserRole.ADMINISTRATOR -> true
-            UserRole.RESOLVER, UserRole.MANAGEMENT -> false
+            UserRole.APPLICANT,
+            UserRole.SUPERVISOR,
+            UserRole.ADMINISTRATOR -> true
+
+            UserRole.RESOLVER,
+            UserRole.MANAGEMENT -> false
         }
     }
 
     fun canChangeStatus(): Boolean {
         return when (_currentUser.value.role) {
-            UserRole.RESOLVER, UserRole.SUPERVISOR, UserRole.MANAGEMENT, UserRole.ADMINISTRATOR -> true
-            UserRole.APPLICANT -> false
+            UserRole.RESOLVER,
+            UserRole.SUPERVISOR,
+            UserRole.ADMINISTRATOR -> true
+
+            UserRole.APPLICANT,
+            UserRole.MANAGEMENT -> false
         }
     }
 
     fun canAddEvidence(): Boolean {
         return when (_currentUser.value.role) {
-            UserRole.RESOLVER, UserRole.SUPERVISOR, UserRole.ADMINISTRATOR -> true
-            UserRole.APPLICANT, UserRole.MANAGEMENT -> false
+            UserRole.RESOLVER,
+            UserRole.SUPERVISOR,
+            UserRole.ADMINISTRATOR -> true
+
+            UserRole.APPLICANT,
+            UserRole.MANAGEMENT -> false
+        }
+    }
+
+    fun canAssignResponsible(): Boolean {
+        return when (_currentUser.value.role) {
+            UserRole.SUPERVISOR,
+            UserRole.ADMINISTRATOR -> true
+
+            UserRole.APPLICANT,
+            UserRole.RESOLVER,
+            UserRole.MANAGEMENT -> false
+        }
+    }
+
+    fun getCommentsByTicket(
+        context: Context,
+        ticketId: String
+    ): Flow<List<CommentEntity>> {
+        return DatabaseProvider
+            .getDatabase(context)
+            .commentDao()
+            .getCommentsByTicket(ticketId)
+    }
+
+    fun addComment(
+        context: Context,
+        ticketId: String,
+        text: String
+    ) {
+        if (text.isBlank()) return
+        if (_currentUser.value.role != UserRole.RESOLVER) return
+
+        val comment = CommentEntity(
+            id = UUID.randomUUID().toString(),
+            ticketId = ticketId,
+            author = _currentUser.value.name,
+            text = text.trim(),
+            date = SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss",
+                Locale.getDefault()
+            ).format(Date())
+        )
+
+        viewModelScope.launch {
+            DatabaseProvider.getDatabase(context)
+                .commentDao()
+                .insertComment(comment)
         }
     }
 
@@ -150,29 +181,55 @@ class TicketViewModel : ViewModel() {
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        if (workflowType.isBlank() || category.isBlank() || priority.isBlank() || location.isBlank() || description.isBlank()) {
+        if (!canCreateTicket()) {
+            onError("No tienes permisos para crear solicitudes.")
+            return
+        }
+
+        if (
+            workflowType.isBlank() ||
+            category.isBlank() ||
+            priority.isBlank() ||
+            location.isBlank() ||
+            description.isBlank()
+        ) {
             onError("Por favor completa todos los campos obligatorios.")
+            return
+        }
+
+        val applicantEmail = _currentUser.value.email.trim()
+
+        if (applicantEmail.isBlank()) {
+            onError("Debes iniciar sesión para crear una solicitud.")
             return
         }
 
         try {
             val newId = "TK-${(1000..9999).random()}"
+            val currentDate = SimpleDateFormat(
+                "yyyy-MM-dd",
+                Locale.getDefault()
+            ).format(Date())
+
             val newTicket = Ticket(
                 id = newId,
                 workflowType = workflowType,
                 category = category,
                 priority = priority,
                 state = "Pendiente",
-                creationDate = "2026-10-12",
-                updateDate = "2026-10-12",
+                creationDate = currentDate,
+                updateDate = currentDate,
                 location = location,
                 applicantRole = applicantRole,
                 resolverTeam = resolverTeam,
                 responsible = responsible,
-                description = description
+                description = description,
+                applicantEmail = applicantEmail
             )
 
-            val ticketDao = DatabaseProvider.getDatabase(context).ticketDao()
+            val ticketDao = DatabaseProvider
+                .getDatabase(context)
+                .ticketDao()
 
             viewModelScope.launch {
                 try {
@@ -189,7 +246,8 @@ class TicketViewModel : ViewModel() {
                             applicantRole = newTicket.applicantRole,
                             resolverTeam = newTicket.resolverTeam,
                             responsible = newTicket.responsible,
-                            description = newTicket.description
+                            description = newTicket.description,
+                            applicantEmail = newTicket.applicantEmail
                         )
                     )
 
@@ -200,30 +258,40 @@ class TicketViewModel : ViewModel() {
 
                     onSuccess()
                 } catch (e: Exception) {
-                    onError(e.localizedMessage ?: "Error al guardar la solicitud")
+                    onError(
+                        e.localizedMessage
+                            ?: "Error al guardar la solicitud"
+                    )
                 }
             }
-
-
-
         } catch (e: Exception) {
-            onError(e.localizedMessage ?: "Error al guardar la solicitud")
+            onError(
+                e.localizedMessage
+                    ?: "Error al guardar la solicitud"
+            )
         }
     }
 
-    fun updateTicketStatus(context: Context, ticketId: String, newStatus: String) {
+    fun updateTicketStatus(
+        context: Context,
+        ticketId: String,
+        newStatus: String
+    ) {
         if (!canChangeStatus()) return
 
         viewModelScope.launch {
             try {
-                val ticketDao = DatabaseProvider.getDatabase(context).ticketDao()
+                val ticketDao = DatabaseProvider
+                    .getDatabase(context)
+                    .ticketDao()
 
-                val ticket = ticketDao.getTicketById(ticketId) ?: return@launch
+                val ticket = ticketDao.getTicketById(ticketId)
+                    ?: return@launch
 
-                val updateDate = java.text.SimpleDateFormat(
+                val updateDate = SimpleDateFormat(
                     "yyyy-MM-dd",
-                    java.util.Locale.getDefault()
-                ).format(java.util.Date())
+                    Locale.getDefault()
+                ).format(Date())
 
                 ticketDao.updateTicketStatus(
                     ticketId = ticket.id,
@@ -236,7 +304,7 @@ class TicketViewModel : ViewModel() {
                     message = "La solicitud $ticketId cambió su estado a: '$newStatus'."
                 )
             } catch (e: Exception) {
-                android.util.Log.e(
+                Log.e(
                     "TicketViewModel",
                     "Error al actualizar la solicitud $ticketId",
                     e
@@ -245,8 +313,61 @@ class TicketViewModel : ViewModel() {
         }
     }
 
+    fun assignTicketResponsible(
+        context: Context,
+        ticketId: String,
+        responsible: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (!canAssignResponsible()) {
+            onError("No tienes permisos para asignar responsables.")
+            return
+        }
+
+        if (responsible.isBlank()) {
+            onError("Debes ingresar un responsable.")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val ticketDao = DatabaseProvider
+                    .getDatabase(context)
+                    .ticketDao()
+
+                val ticket = ticketDao.getTicketById(ticketId)
+
+                if (ticket == null) {
+                    onError("No se encontró la solicitud.")
+                    return@launch
+                }
+
+                val updateDate = SimpleDateFormat(
+                    "yyyy-MM-dd",
+                    Locale.getDefault()
+                ).format(Date())
+
+                ticketDao.updateTicketResponsible(
+                    ticketId = ticketId,
+                    responsible = responsible.trim(),
+                    updateDate = updateDate
+                )
+
+                onSuccess()
+            } catch (e: Exception) {
+                onError(
+                    e.localizedMessage
+                        ?: "No se pudo asignar el responsable."
+                )
+            }
+        }
+    }
+
     fun initializeDatabase(context: Context) {
-        val ticketDao = DatabaseProvider.getDatabase(context).ticketDao()
+        val ticketDao = DatabaseProvider
+            .getDatabase(context)
+            .ticketDao()
 
         viewModelScope.launch {
             ticketDao.getAllTickets().collect { entities ->
@@ -263,7 +384,8 @@ class TicketViewModel : ViewModel() {
                         applicantRole = entity.applicantRole,
                         resolverTeam = entity.resolverTeam,
                         responsible = entity.responsible,
-                        description = entity.description
+                        description = entity.description,
+                        applicantEmail = entity.applicantEmail
                     )
                 }
 
@@ -271,4 +393,23 @@ class TicketViewModel : ViewModel() {
             }
         }
     }
+
+    fun testApiConnection() {
+        viewModelScope.launch {
+            try {
+                val posts = TicketRepository().getPostsFromApi()
+
+                Log.d(
+                    "PANAL_API",
+                    "Conexión desde ViewModel exitosa. Registros: ${posts.size}"
+                )
+            } catch (e: Exception) {
+                Log.e(
+                    "PANAL_API",
+                    "Error de conexión desde ViewModel",
+                    e
+                )
+            }
+        }
     }
+}

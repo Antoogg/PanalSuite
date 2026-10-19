@@ -1,3 +1,4 @@
+
 package com.example.panalsuite.ui
 
 import android.content.Context
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.panalsuite.data.local.dao.EvidenceDao
 import com.example.panalsuite.data.local.entity.EvidenceEntity
+import com.example.panalsuite.repository.EvidenceRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,12 +61,17 @@ fun EvidenceScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    val repository = remember { EvidenceRepository() }
 
     val evidences by produceState(
-        initialValue = emptyList<EvidenceEntity>(),
-        key1 = ticketId
+        initialValue = emptyList(),
+        key1 = ticketId,
+        key2 = evidenceDao
     ) {
-        evidenceDao.getEvidencesByTicket(ticketId).collect { savedEvidences ->
+        repository.getEvidencesFromDatabase(
+            dao = evidenceDao,
+            ticketId = ticketId
+        ).collect { savedEvidences ->
             value = savedEvidences
         }
     }
@@ -72,23 +79,27 @@ fun EvidenceScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
-
     val galleryPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
             coroutineScope.launch {
                 errorMessage = null
+                successMessage = null
+
                 try {
                     val imagePath = withContext(Dispatchers.IO) {
                         saveUriToInternalStorage(context, uri)
                     }
-                    evidenceDao.insertEvidence(
-                        EvidenceEntity(
+
+                    repository.saveEvidenceToDatabase(
+                        dao = evidenceDao,
+                        evidence = EvidenceEntity(
                             ticketId = ticketId,
                             imagePath = imagePath
                         )
                     )
+
                     successMessage = "Imagen agregada desde galería"
                 } catch (_: Exception) {
                     errorMessage = "No se pudo guardar la imagen"
@@ -97,23 +108,27 @@ fun EvidenceScreen(
         }
     }
 
-
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
         if (bitmap != null) {
             coroutineScope.launch {
                 errorMessage = null
+                successMessage = null
+
                 try {
                     val imagePath = withContext(Dispatchers.IO) {
                         saveBitmapToInternalStorage(context, bitmap)
                     }
-                    evidenceDao.insertEvidence(
-                        EvidenceEntity(
+
+                    repository.saveEvidenceToDatabase(
+                        dao = evidenceDao,
+                        evidence = EvidenceEntity(
                             ticketId = ticketId,
                             imagePath = imagePath
                         )
                     )
+
                     successMessage = "Foto tomada con éxito"
                 } catch (_: Exception) {
                     errorMessage = "No se pudo guardar la foto de la cámara"
@@ -125,7 +140,9 @@ fun EvidenceScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Evidencias ($ticketId)") }
+                title = {
+                    Text("Evidencias ($ticketId)")
+                }
             )
         },
         bottomBar = {
@@ -136,7 +153,6 @@ fun EvidenceScreen(
                 Text("Volver")
             }
         }
-
     ) { padding ->
         Column(
             modifier = Modifier
@@ -157,14 +173,18 @@ fun EvidenceScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
-                    onClick = { cameraLauncher.launch() },
+                    onClick = {
+                        cameraLauncher.launch()
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Tomar Foto")
                 }
 
                 OutlinedButton(
-                    onClick = { galleryPicker.launch("image/*") },
+                    onClick = {
+                        galleryPicker.launch("image/*")
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Galería")
@@ -173,7 +193,7 @@ fun EvidenceScreen(
 
             if (errorMessage != null) {
                 Text(
-                    text = errorMessage ?: "",
+                    text = errorMessage.orEmpty(),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -181,7 +201,7 @@ fun EvidenceScreen(
 
             if (successMessage != null) {
                 Text(
-                    text = successMessage ?: "",
+                    text = successMessage.orEmpty(),
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -210,7 +230,9 @@ fun EvidenceScreen(
                 evidences.forEachIndexed { index, evidence ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 2.dp
+                        )
                     ) {
                         Column(
                             modifier = Modifier.padding(12.dp),
@@ -221,11 +243,15 @@ fun EvidenceScreen(
                                 text = "📎 Evidencia ${index + 1}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.align(Alignment.Start)
+                                modifier = Modifier.align(
+                                    Alignment.Start
+                                )
                             )
 
                             val bitmap = remember(evidence.imagePath) {
-                                BitmapFactory.decodeFile(evidence.imagePath)
+                                BitmapFactory.decodeFile(
+                                    evidence.imagePath
+                                )
                             }
 
                             if (bitmap != null) {
@@ -246,32 +272,59 @@ fun EvidenceScreen(
                     }
                 }
             }
-
-
         }
     }
 }
 
-private fun saveUriToInternalStorage(context: Context, imageUri: Uri): String {
+private fun saveUriToInternalStorage(
+    context: Context,
+    imageUri: Uri
+): String {
     val folder = File(context.filesDir, "evidences")
-    if (!folder.exists()) folder.mkdirs()
 
-    val file = File(folder, "EVI_${UUID.randomUUID()}.jpg")
-    context.contentResolver.openInputStream(imageUri)?.use { input ->
+    if (!folder.exists()) {
+        folder.mkdirs()
+    }
+
+    val file = File(
+        folder,
+        "EVI_${UUID.randomUUID()}.jpg"
+    )
+
+    val input = context.contentResolver.openInputStream(imageUri)
+        ?: throw IllegalStateException("No se pudo abrir la imagen")
+
+    input.use { source ->
         file.outputStream().use { output ->
-            input.copyTo(output)
+            source.copyTo(output)
         }
     }
+
     return file.absolutePath
 }
 
-private fun saveBitmapToInternalStorage(context: Context, bitmap: Bitmap): String {
+private fun saveBitmapToInternalStorage(
+    context: Context,
+    bitmap: Bitmap
+): String {
     val folder = File(context.filesDir, "evidences")
-    if (!folder.exists()) folder.mkdirs()
 
-    val file = File(folder, "CAM_${UUID.randomUUID()}.jpg")
-    FileOutputStream(file).use { out ->
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+    if (!folder.exists()) {
+        folder.mkdirs()
     }
+
+    val file = File(
+        folder,
+        "CAM_${UUID.randomUUID()}.jpg"
+    )
+
+    FileOutputStream(file).use { output ->
+        bitmap.compress(
+            Bitmap.CompressFormat.JPEG,
+            90,
+            output
+        )
+    }
+
     return file.absolutePath
 }
