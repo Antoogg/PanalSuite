@@ -3,6 +3,7 @@ package com.example.panalsuite
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -28,18 +29,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.panalsuite.model.UserRole
+import com.example.panalsuite.network.ApiClient
 import com.example.panalsuite.ui.CreateTicketScreen
 import com.example.panalsuite.ui.HomeScreen
 import com.example.panalsuite.ui.TicketDetailScreen
 import com.example.panalsuite.ui.navigation.AppNavHost
 import com.example.panalsuite.viewmodel.TicketUiState
 import com.example.panalsuite.viewmodel.TicketViewModel
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -47,6 +51,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        ticketViewModel.testApiConnection()
+
         setContent {
             MaterialTheme {
                 AppNavHost(ticketViewModel = ticketViewModel)

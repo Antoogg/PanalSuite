@@ -1,3 +1,4 @@
+
 package com.example.panalsuite.ui.navigation
 
 import androidx.compose.material3.Text
@@ -10,7 +11,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.panalsuite.data.local.DatabaseProvider
+import com.example.panalsuite.data.local.database.DatabaseProvider
+import com.example.panalsuite.model.UserRole
 import com.example.panalsuite.ui.CreateTicketScreen
 import com.example.panalsuite.ui.EvidenceScreen
 import com.example.panalsuite.ui.HomeScreen
@@ -26,15 +28,27 @@ fun AppNavHost(
     val navController = rememberNavController()
     val context = LocalContext.current
 
+    val currentUser by ticketViewModel.currentUser.collectAsState()
+    val uiState by ticketViewModel.uiState.collectAsState()
+
+    val tickets = (uiState as? TicketUiState.Success)?.tickets.orEmpty()
+
     NavHost(
         navController = navController,
         startDestination = Routes.LOGIN,
-        enterTransition = { androidx.compose.animation.EnterTransition.None },
-        exitTransition = { androidx.compose.animation.ExitTransition.None },
-        popEnterTransition = { androidx.compose.animation.EnterTransition.None },
-        popExitTransition = { androidx.compose.animation.ExitTransition.None }
+        enterTransition = {
+            androidx.compose.animation.EnterTransition.None
+        },
+        exitTransition = {
+            androidx.compose.animation.ExitTransition.None
+        },
+        popEnterTransition = {
+            androidx.compose.animation.EnterTransition.None
+        },
+        popExitTransition = {
+            androidx.compose.animation.ExitTransition.None
+        }
     ) {
-
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { user ->
@@ -53,7 +67,9 @@ fun AppNavHost(
             HomeScreen(
                 viewModel = ticketViewModel,
                 onTicketClick = { ticketId ->
-                    navController.navigate(Routes.ticketDetail(ticketId))
+                    navController.navigate(
+                        Routes.ticketDetail(ticketId)
+                    )
                 },
                 onCreateTicketClick = {
                     navController.navigate(Routes.CREATE_TICKET)
@@ -65,12 +81,8 @@ fun AppNavHost(
                         }
                         launchSingleTop = true
                     }
+
                     ticketViewModel.logout()
-
-
-
-
-
                 }
             )
         }
@@ -97,13 +109,23 @@ fun AppNavHost(
                 ?.getString("ticketId")
                 .orEmpty()
 
-            val uiState by ticketViewModel.uiState.collectAsState()
+            val ticket = tickets.find {
+                it.id == ticketId
+            }
 
-            val ticket = (uiState as? TicketUiState.Success)
-                ?.tickets
-                ?.find { it.id == ticketId }
+            val canViewTicket = ticket != null &&
+                    (
+                            currentUser.role != UserRole.APPLICANT ||
+                                    (
+                                            currentUser.email.isNotBlank() &&
+                                                    ticket.applicantEmail.trim().equals(
+                                                        currentUser.email.trim(),
+                                                        ignoreCase = true
+                                                    )
+                                            )
+                            )
 
-            if (ticket != null) {
+            if (canViewTicket && ticket != null) {
                 TicketDetailScreen(
                     ticket = ticket,
                     viewModel = ticketViewModel,
@@ -111,11 +133,13 @@ fun AppNavHost(
                         navController.popBackStack()
                     },
                     onAddEvidenceClick = {
-                        navController.navigate(Routes.evidence(ticketId))
+                        navController.navigate(
+                            Routes.evidence(ticketId)
+                        )
                     }
                 )
             } else {
-                Text("Solicitud no encontrada")
+                Text("Solicitud no encontrada o acceso no permitido")
             }
         }
 
@@ -132,13 +156,35 @@ fun AppNavHost(
                 ?.getString("ticketId")
                 .orEmpty()
 
-            EvidenceScreen(
-                ticketId = ticketId,
-                evidenceDao = DatabaseProvider
-                    .getDatabase(context)
-                    .evidenceDao(),
-                onBack = { navController.popBackStack() }
-            )
+            val ticket = tickets.find {
+                it.id == ticketId
+            }
+
+            val canViewEvidence = ticket != null &&
+                    (
+                            currentUser.role != UserRole.APPLICANT ||
+                                    (
+                                            currentUser.email.isNotBlank() &&
+                                                    ticket.applicantEmail.trim().equals(
+                                                        currentUser.email.trim(),
+                                                        ignoreCase = true
+                                                    )
+                                            )
+                            )
+
+            if (canViewEvidence) {
+                EvidenceScreen(
+                    ticketId = ticketId,
+                    evidenceDao = DatabaseProvider
+                        .getDatabase(context)
+                        .evidenceDao(),
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            } else {
+                Text("Evidencias no disponibles o acceso no permitido")
+            }
         }
     }
 }

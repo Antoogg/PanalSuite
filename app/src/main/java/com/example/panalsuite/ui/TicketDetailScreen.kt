@@ -34,6 +34,21 @@ fun TicketDetailScreen(
     val currentUser by viewModel.currentUser.collectAsState()
     val canChangeStatus = viewModel.canChangeStatus()
     val canAddEvidence = viewModel.canAddEvidence()
+    val canAssignResponsible = viewModel.canAssignResponsible()
+
+    var showResponsibleMenu by remember { mutableStateOf(false) }
+    var selectedResponsible by remember(ticket.id) {
+        mutableStateOf(
+            ticket.responsible.takeUnless {
+                it.isBlank() || it == "Sin asignar"
+            } ?: ""
+        )
+    }
+    var assignmentMessage by remember { mutableStateOf("") }
+
+    val responsibleOptions = listOf(
+        "Usuario Resolutor"
+    )
 
     Scaffold(
         topBar = {
@@ -84,6 +99,11 @@ fun TicketDetailScreen(
                     Text(text = "Categoría: ${ticket.category}")
                     Text(text = "Prioridad: ${ticket.priority}")
                     Text(text = "Ubicación: ${ticket.location}")
+                    Text(text = "Equipo resolutor: ${ticket.resolverTeam}")
+                    Text(text = "Responsable asignado: ${ticket.responsible}")
+                    Text(text = "Rol solicitante: ${ticket.applicantRole}")
+                    Text(text = "Fecha de creación: ${ticket.creationDate}")
+                    Text(text = "Última actualización: ${ticket.updateDate}")
                     Text(
                         text = "Estado actual: ${ticket.state}",
                         fontWeight = FontWeight.Bold,
@@ -99,6 +119,86 @@ fun TicketDetailScreen(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
+
+
+            if (canAssignResponsible) {
+
+                Text(
+                    text = "Asignar responsable",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = showResponsibleMenu,
+                    onExpandedChange = {
+                        showResponsibleMenu = !showResponsibleMenu
+                    }
+                ) {
+                    OutlinedTextField(
+                        value = selectedResponsible,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Responsable") },
+                        placeholder = { Text("Selecciona un responsable") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(
+                                expanded = showResponsibleMenu
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = showResponsibleMenu,
+                        onDismissRequest = {
+                            showResponsibleMenu = false
+                        }
+                    ) {
+                        responsibleOptions.forEach { responsible ->
+                            DropdownMenuItem(
+                                text = { Text(responsible) },
+                                onClick = {
+                                    selectedResponsible = responsible
+                                    showResponsibleMenu = false
+                                    assignmentMessage = ""
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        viewModel.assignTicketResponsible(
+                            context = context,
+                            ticketId = ticket.id,
+                            responsible = selectedResponsible,
+                            onSuccess = {
+                                assignmentMessage =
+                                    "Responsable asignado correctamente."
+                            },
+                            onError = { error ->
+                                assignmentMessage = error
+                            }
+                        )
+                    },
+                    enabled = selectedResponsible.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Guardar responsable")
+                }
+
+                if (assignmentMessage.isNotBlank()) {
+                    Text(
+                        text = assignmentMessage,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
 
             if (canChangeStatus) {
                 val nextStatus = when (ticket.state) {
