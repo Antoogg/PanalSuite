@@ -1,3 +1,4 @@
+
 package com.example.panalsuite.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +13,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -33,6 +38,55 @@ import com.example.panalsuite.viewmodel.TicketViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun TicketDropdown(
+    label: String,
+    selectedValue: String,
+    options: List<String>,
+    onValueSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = selectedValue,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            placeholder = { Text("Seleccione una opción") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(
+                    type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                    enabled = true
+                ),
+            singleLine = true
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onValueSelected(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun CreateTicketScreen(
     viewModel: TicketViewModel,
     onBack: () -> Unit = {}
@@ -41,6 +95,41 @@ fun CreateTicketScreen(
 
     val currentUser by viewModel.currentUser.collectAsState()
     val canCreate = viewModel.canCreateTicket()
+
+    val workflowOptions = listOf(
+        "Mesa de Ayuda",
+        "Gestión de Gastos",
+        "Mantenimiento",
+        "Solicitud de Recursos"
+    )
+
+    val categoryOptions = listOf(
+        "Falla de Impresora",
+        "Hardware",
+        "Software",
+        "Redes e Internet",
+        "Accesos y Contraseñas",
+        "Mantenimiento",
+        "Otros"
+    )
+
+    val priorityOptions = listOf(
+        "Baja",
+        "Media",
+        "Alta"
+    )
+
+    val locationOptions = listOf(
+        "Sucursal Ahumada",
+        "Tienda Alameda",
+        "Sucursal Oma",
+        "Sucursal Central",
+        "Sucursal Norte",
+        "Sucursal Sur",
+        "Sucursal Oriente",
+        "Casa Matriz",
+        "Centro de Distribución"
+    )
 
     var workflowType by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
@@ -62,8 +151,6 @@ fun CreateTicketScreen(
                         modifier = Modifier.padding(start = 8.dp),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
-
-
                     )
                 }
             )
@@ -79,7 +166,9 @@ fun CreateTicketScreen(
         ) {
             if (!canCreate) {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
@@ -99,52 +188,44 @@ fun CreateTicketScreen(
                     Text("Volver")
                 }
             } else {
-                OutlinedTextField(
-                    value = workflowType,
-                    onValueChange = {
+                TicketDropdown(
+                    label = "Tipo de solicitud *",
+                    selectedValue = workflowType,
+                    options = workflowOptions,
+                    onValueSelected = {
                         workflowType = it
                         errorMessage = ""
-                    },
-                    label = { Text("Tipo de solicitud *") },
-                    placeholder = { Text("Ej: Mesa de Ayuda, Gestión de Gastos") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    }
                 )
 
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = {
+                TicketDropdown(
+                    label = "Categoría *",
+                    selectedValue = category,
+                    options = categoryOptions,
+                    onValueSelected = {
                         category = it
                         errorMessage = ""
-                    },
-                    label = { Text("Categoría *") },
-                    placeholder = { Text("Ej: Falla de Impresora, Hardware") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    }
                 )
 
-                OutlinedTextField(
-                    value = priority,
-                    onValueChange = {
+                TicketDropdown(
+                    label = "Prioridad *",
+                    selectedValue = priority,
+                    options = priorityOptions,
+                    onValueSelected = {
                         priority = it
                         errorMessage = ""
-                    },
-                    label = { Text("Prioridad *") },
-                    placeholder = { Text("Ej: Alta, Media, Baja") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    }
                 )
 
-                OutlinedTextField(
-                    value = location,
-                    onValueChange = {
+                TicketDropdown(
+                    label = "Ubicación *",
+                    selectedValue = location,
+                    options = locationOptions,
+                    onValueSelected = {
                         location = it
                         errorMessage = ""
-                    },
-                    label = { Text("Ubicación *") },
-                    placeholder = { Text("Ej: Sucursal Ahumada, Tienda Alameda") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    }
                 )
 
                 OutlinedTextField(
@@ -154,7 +235,9 @@ fun CreateTicketScreen(
                         errorMessage = ""
                     },
                     label = { Text("Descripción del problema *") },
-                    placeholder = { Text("Detalle la situación o requerimiento...") },
+                    placeholder = {
+                        Text("Detalle la situación o requerimiento...")
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
                 )
@@ -178,30 +261,48 @@ fun CreateTicketScreen(
 
                 Button(
                     onClick = {
-                        viewModel.createTicket(
-                            context = context,
-                            workflowType = workflowType,
-                            category = category,
-                            priority = priority,
-                            location = location,
-                            applicantRole = currentUser.role.name,
-                            resolverTeam = "Soporte TI",
-                            responsible = "Sin asignar",
-                            description = description,
-                            onSuccess = {
-                                successMessage = "¡Solicitud creada exitosamente!"
-                                errorMessage = ""
-                                workflowType = ""
-                                category = ""
-                                priority = ""
-                                location = ""
-                                description = ""
-                            },
-                            onError = { err ->
-                                errorMessage = err
+                        when {
+                            workflowType !in workflowOptions ||
+                                    category !in categoryOptions ||
+                                    priority !in priorityOptions ||
+                                    location !in locationOptions -> {
+                                errorMessage = "Debe seleccionar una opción válida en todos los campos."
                                 successMessage = ""
                             }
-                        )
+
+                            description.trim().length < 10 ||
+                                    !description.any { it.isLetter() } -> {
+                                errorMessage = "La descripción debe tener al menos 10 caracteres e incluir letras."
+                                successMessage = ""
+                            }
+
+                            else -> {
+                                viewModel.createTicket(
+                                    context = context,
+                                    workflowType = workflowType,
+                                    category = category,
+                                    priority = priority,
+                                    location = location,
+                                    applicantRole = currentUser.role.name,
+                                    resolverTeam = "Soporte TI",
+                                    responsible = "Sin asignar",
+                                    description = description.trim(),
+                                    onSuccess = {
+                                        successMessage = "¡Solicitud creada exitosamente!"
+                                        errorMessage = ""
+                                        workflowType = ""
+                                        category = ""
+                                        priority = ""
+                                        location = ""
+                                        description = ""
+                                    },
+                                    onError = { err ->
+                                        errorMessage = err
+                                        successMessage = ""
+                                    }
+                                )
+                            }
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

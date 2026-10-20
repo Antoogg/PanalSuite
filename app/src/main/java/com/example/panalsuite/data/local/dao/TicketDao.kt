@@ -8,6 +8,7 @@ import com.example.panalsuite.data.local.entity.TicketEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+
 interface TicketDao {
 
     @Query("SELECT * FROM tickets")
