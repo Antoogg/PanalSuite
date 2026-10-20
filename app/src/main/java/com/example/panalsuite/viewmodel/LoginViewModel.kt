@@ -1,3 +1,4 @@
+
 package com.example.panalsuite.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -8,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class LoginViewModel : ViewModel() {
+
     private val repository = UserRepository()
 
     private val _loggedUser = MutableStateFlow<User?>(null)
@@ -21,6 +23,7 @@ class LoginViewModel : ViewModel() {
             _errorMessage.value = "Debe ingresar correo y contraseña"
             return
         }
+
         val user = repository.login(email, password)
 
         if (user != null) {
@@ -29,10 +32,5 @@ class LoginViewModel : ViewModel() {
         } else {
             _errorMessage.value = "Correo o contraseña incorrectos"
         }
-    }
-
-    fun logout() {
-        _loggedUser.value = null
-        _errorMessage.value = null
     }
 }

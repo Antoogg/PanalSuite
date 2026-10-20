@@ -71,10 +71,6 @@ class TicketViewModel : ViewModel() {
     )
     val currentUser: StateFlow<User> = _currentUser.asStateFlow()
 
-    fun setCurrentUserRole(role: UserRole) {
-        _currentUser.value = _currentUser.value.copy(role = role)
-    }
-
     fun setCurrentUser(user: User) {
         _currentUser.value = user
     }
